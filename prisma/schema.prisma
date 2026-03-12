@@ -71,6 +71,6 @@ model Registration {
   status          RegStatus @default(PENDING)
   createdAt       DateTime  @default(now())
 
-  // ป้องกันการสมัครรุ่นเดิมซ้ำซ้อน
+  // 🚩 อัปเดตให้รองรับการลงควบรุ่น
   @@unique([driverId, eventId, category]) 
 }
