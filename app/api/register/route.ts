@@ -8,6 +8,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { firstName, lastName, birthDate, racingNumber, events, primaryClass, crossEntry } = body;
 
+    // 🚩 1. จัดการเรื่องรุ่นควบ
     let secondaryClass = null;
     if (crossEntry) {
       if (primaryClass === 'Micro MAX') secondaryClass = 'Micro Rookie';
@@ -15,46 +16,63 @@ export async function POST(request: Request) {
       else if (primaryClass === 'Senior MAX Masters') secondaryClass = 'Senior MAX';
     }
 
-    const registrationsToCreate: any[] = [];
-    events.forEach((eventId: string) => {
-      registrationsToCreate.push({ eventId: eventId, category: primaryClass, racingNumber: parseInt(racingNumber) });
-      if (secondaryClass) {
-        registrationsToCreate.push({ eventId: eventId, category: secondaryClass, racingNumber: parseInt(racingNumber) });
+    // 🚩 2. มั่นใจว่ามี User และ Event ในระบบ (Auto-Provisioning)
+    const vipUser = await prisma.user.upsert({
+      where: { email: 'vip@ptcreative.com' },
+      update: {},
+      create: {
+        email: 'vip@ptcreative.com',
+        password: 'password123',
+        entrantName: 'PT Creative',
+        role: 'VIP'
       }
     });
 
-    // 🚩 1. เช็คว่ามี User ทีม VIP อยู่ในระบบหรือยัง ถ้ายังให้สร้างใหม่เลย
-    let vipUser = await prisma.user.findFirst({
-      where: { email: 'vip@ptcreative.com' }
-    });
-
-    if (!vipUser) {
-      vipUser = await prisma.user.create({
-        data: {
-          email: 'vip@ptcreative.com',
-          password: 'password123', // รหัสผ่านจำลอง
-          entrantName: 'PT Creative',
-          role: 'VIP'
+    for (const eventId of events) {
+      await prisma.event.upsert({
+        where: { id: eventId },
+        update: {},
+        create: {
+          id: eventId,
+          name: eventId === 'TH-R2' ? 'RMC Thailand 2026 - R2' : 'RMC Asia Trophy 2026 - R2',
+          series: eventId.includes('TH') ? 'Thailand' : 'Asia',
+          raceWeekendId: 'Wk-02',
+          startDate: new Date('2026-04-04'),
+          endDate: new Date('2026-04-05'),
         }
       });
     }
 
-    // 🚩 2. บันทึกข้อมูลนักแข่ง โดยผูกกับ vipUser.id ของจริง!
+    // 🚩 3. เตรียมข้อมูลการลงทะเบียน
+    const registrationsData = [];
+    for (const eventId of events) {
+      registrationsData.push({ eventId, category: primaryClass, racingNumber: parseInt(racingNumber) });
+      if (secondaryClass) {
+        registrationsData.push({ eventId, category: secondaryClass, racingNumber: parseInt(racingNumber) });
+      }
+    }
+
+    // 🚩 4. บันทึก Driver และ Registration พร้อมกัน
     const result = await prisma.driver.create({
       data: {
         firstName,
         lastName,
         birthDate: new Date(birthDate),
-        userId: vipUser.id, // ใช้ ID ของจริงจาก Database
+        userId: vipUser.id,
         registrations: {
-          create: registrationsToCreate
+          create: registrationsData
         }
       }
     });
 
-    return NextResponse.json({ message: 'ลงทะเบียนสำเร็จ!', data: result });
-  } catch (error) {
-    console.error("Database Error:", error);
-    return NextResponse.json({ error: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล' }, { status: 500 });
+    return NextResponse.json({ success: true, data: result });
+  } catch (error: any) {
+    console.error("CRITICAL DB ERROR:", error);
+    // ส่ง Error Message ออกไปที่ Alert หน้าบ้านเพื่อให้รู้สาเหตุที่แท้จริง
+    return NextResponse.json({ 
+      success: false, 
+      error: error.message,
+      code: error.code 
+    }, { status: 500 });
   }
 }
