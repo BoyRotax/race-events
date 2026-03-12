@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STANDARD
+  VIP
+  ADMIN
+  TECHNIC
+  OFFICE
+}
+
+enum RegStatus {
+  PENDING
+  PAID
+  CONFIRMED
+}
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  password       String
+  role           Role     @default(STANDARD)
+  entrantName    String?  
+  entrantLicense String? 
+  phone          String?
+  drivers        Driver[] 
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Driver {
+  id             String         @id @default(uuid())
+  userId         String         
+  user           User           @relation(fields: [userId], references: [id])
+  firstName      String
+  lastName       String
+  birthDate      DateTime       
+  nationality    String?
+  chassisBrand   String?        
+  registrations  Registration[] 
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model Event {
+  id              String         @id @default(uuid())
+  name            String         
+  series          String         
+  raceWeekendId   String         
+  startDate       DateTime
+  endDate         DateTime
+  isActive        Boolean        @default(true) 
+  registrations   Registration[]
+}
+
+model Registration {
+  id              String    @id @default(uuid())
+  driverId        String
+  driver          Driver    @relation(fields: [driverId], references: [id])
+  eventId         String
+  event           Event     @relation(fields: [eventId], references: [id])
+  category        String    
+  racingNumber    Int       
+  transponder     String?   
+  status          RegStatus @default(PENDING)
+  createdAt       DateTime  @default(now())
+
+  // ป้องกันการสมัครรุ่นเดิมซ้ำซ้อน
+  @@unique([driverId, eventId, category]) 
+}
