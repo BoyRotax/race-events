@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+// 🚩 ส่วนที่ 1: Import signOut เข้ามา
+import { signOut } from "next-auth/react";
 
-// เรทราคาค่าสมัครอ้างอิง
 const ENTRY_FEES: Record<string, number> = {
   'Micro MAX': 21000,
   'Mini MAX': 27500,
@@ -21,7 +22,6 @@ export default function VipTeamDashboard() {
   const [teamDrivers, setTeamDrivers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // ดึงข้อมูลเฉพาะทีมตัวเอง
   useEffect(() => {
     const fetchTeamData = async () => {
       try {
@@ -37,11 +37,10 @@ export default function VipTeamDashboard() {
     fetchTeamData();
   }, []);
 
-  // คำนวณยอดรวมของทีม
   const totalTeamFee = teamDrivers.reduce((sum, reg) => sum + (ENTRY_FEES[reg.category] || 0) * reg.events.length, 0);
 
   return (
-    <div className="bg-[#111111] min-h-screen font-sans pb-10"> {/* 🚩 ใช้พื้นหลังสีเข้มให้ดู VIP */}
+    <div className="bg-[#111111] min-h-screen font-sans pb-10">
       
       {/* Top Navbar */}
       <nav className="bg-black text-white shadow-lg border-b border-gray-800">
@@ -51,17 +50,29 @@ export default function VipTeamDashboard() {
               ROTAX <span className="text-[#E43138]">RACING</span>
             </h1>
           </div>
+          
+          {/* 🚩 ส่วนที่ 2: เพิ่มปุ่ม Logout ใน Navbar ฝั่งขวา */}
           <div className="flex items-center gap-4 text-sm font-bold text-gray-300">
-            <span className="bg-[#cba052] text-black px-3 py-1 rounded text-xs font-black uppercase tracking-wider">
-              VIP Entrant
-            </span>
-            <span>PT Creative Team</span>
-            <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center border border-gray-500">
+            <button 
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="bg-gray-800 text-white px-3 py-1.5 rounded text-xs hover:bg-red-700 transition border border-gray-600 shadow-sm"
+            >
+              <i className="fas fa-sign-out-alt mr-1"></i> LOGOUT
+            </button>
+            
+            <div className="hidden md:flex flex-col items-end">
+                <span className="bg-[#cba052] text-black px-2 py-0.5 rounded-[4px] text-[10px] font-black uppercase tracking-tighter mb-0.5">
+                    VIP Entrant
+                </span>
+                <span className="text-[11px] text-gray-400">PT Creative Team</span>
+            </div>
+
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center border border-gray-500 shadow-inner text-white font-black">
                 PT
             </div>
           </div>
         </div>
-        <div className="h-1 bg-gradient-to-r from-[#cba052] to-yellow-200 w-full"></div> {/* เส้นคาดสีทอง VIP */}
+        <div className="h-1 bg-gradient-to-r from-[#cba052] to-yellow-200 w-full opacity-50"></div>
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 mt-8">
@@ -72,13 +83,12 @@ export default function VipTeamDashboard() {
             <p className="text-gray-400 text-sm mt-1">จัดการนักแข่งและดูยอดค่าใช้จ่ายของทีมคุณ</p>
           </div>
           
-          {/* 🚩 ปุ่มสำหรับเพิ่มนักแข่งในทีม (ลิ้งก์กลับไปหน้าฟอร์ม) */}
-          <Link href="/participant" className="bg-[#E43138] text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-red-700 transition transform hover:scale-105">
+          <Link href="/participant" className="bg-[#E43138] text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-red-700 transition transform hover:scale-105 active:scale-95">
             <i className="fas fa-plus-circle mr-2"></i> Register New Driver
           </Link>
         </div>
 
-        {/* KPI Cards (Theme Dark Mode) */}
+        {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-[#1a1a1a] p-6 rounded-xl border border-gray-800 shadow-xl">
             <p className="text-sm font-bold text-gray-500 uppercase tracking-wide">Drivers in Team</p>
@@ -99,7 +109,7 @@ export default function VipTeamDashboard() {
 
         {/* Data Table */}
         <div className="bg-[#1a1a1a] rounded-xl shadow-xl border border-gray-800 overflow-hidden">
-          <div className="p-5 border-b border-gray-800 flex justify-between items-center">
+          <div className="p-5 border-b border-gray-800 flex justify-between items-center bg-black/20">
             <h3 className="font-bold text-white"><i className="fas fa-list-ul mr-2 text-[#cba052]"></i> Registered Drivers</h3>
           </div>
           
@@ -124,34 +134,34 @@ export default function VipTeamDashboard() {
                     <th className="p-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-800 text-sm">
+                <tbody className="divide-y divide-gray-800 text-sm text-gray-300">
                   {teamDrivers.map((driver, index) => {
                     const fee = (ENTRY_FEES[driver.category] || 0) * driver.events.length;
                     
                     return (
-                      <tr key={index} className="hover:bg-[#222222] transition">
+                      <tr key={index} className="hover:bg-[#222222] transition group">
                         <td className="p-4 font-bold text-white text-base">
-                          {driver.name} <span className="text-xs text-gray-500 font-mono ml-2">#{driver.id}</span>
+                          {driver.name} <span className="text-[10px] text-gray-600 font-mono ml-2 group-hover:text-gray-400">ID: {driver.id}</span>
                         </td>
                         <td className="p-4">
                           <div className="font-bold text-[#E43138]">{driver.category}</div>
-                          {driver.crossEntry && <div className="text-xs text-[#cba052] mt-1">+ {driver.crossEntry}</div>}
+                          {driver.crossEntry && <div className="text-[10px] text-[#cba052] font-black mt-0.5 tracking-tighter">+ {driver.crossEntry.toUpperCase()}</div>}
                         </td>
                         <td className="p-4">
                           <div className="flex gap-1 flex-wrap">
                             {driver.events.map((ev: string) => (
-                              <span key={ev} className="bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded border border-gray-700">{ev}</span>
+                              <span key={ev} className="bg-gray-800/50 text-gray-400 text-[10px] px-1.5 py-0.5 rounded border border-gray-700 font-mono uppercase">{ev}</span>
                             ))}
                           </div>
                         </td>
                         <td className="p-4 font-mono font-bold text-gray-300">{formatTHB(fee)}</td>
                         <td className="p-4 text-center">
-                          <span className={`px-3 py-1 rounded font-bold text-xs ${driver.payment === 'PAID' ? 'bg-green-900 text-green-300 border border-green-700' : 'bg-yellow-900 text-yellow-300 border border-yellow-700'}`}>
+                          <span className={`px-2 py-1 rounded-[4px] font-black text-[10px] tracking-tight ${driver.payment === 'PAID' ? 'bg-green-900/30 text-green-400 border border-green-800' : 'bg-yellow-900/30 text-yellow-400 border border-yellow-800'}`}>
                             {driver.payment}
                           </span>
                         </td>
                         <td className="p-4 text-right">
-                          <button className="text-gray-400 hover:text-white transition px-2" title="Edit Data">
+                          <button className="text-gray-600 hover:text-[#cba052] transition px-2 py-1 hover:bg-white/5 rounded" title="Edit Data">
                             <i className="fas fa-edit"></i>
                           </button>
                         </td>
