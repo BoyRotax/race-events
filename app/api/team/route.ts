@@ -6,14 +6,14 @@ const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
   try {
-    // 🔒 1. เช็คว่าใครกำลัง Login อยู่
+    // 1. เช็คว่าใครกำลัง Login อยู่
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
     
     if (!token || !token.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 🔍 2. ดึงข้อมูลนักแข่ง เฉพาะของ "ทีม(User) นี้" เท่านั้น!
+    // 2. ดึงข้อมูลนักแข่ง เฉพาะของทีมนี้
     const drivers = await prisma.driver.findMany({
       where: { userId: token.id as string },
       include: { 
@@ -21,17 +21,17 @@ export async function GET(request: NextRequest) {
           include: { event: true }
         } 
       },
-      orderBy: { id: 'desc' } // เรียงจากล่าสุด
+      orderBy: { id: 'desc' }
     });
 
-    // 📦 3. จัดระเบียบข้อมูลส่งให้หน้าบ้านโชว์สวยๆ
+    // 3. จัดระเบียบข้อมูล
     const formattedData = drivers.map(driver => {
       const primaryClass = driver.registrations[0]?.category || 'Unknown';
       const crossEntry = driver.registrations[0]?.crossEntry || null;
       const events = [...new Set(driver.registrations.map(r => r.eventId))];
       const paymentStatus = driver.registrations[0]?.paymentStatus || 'PENDING';
 
-return {
+      return {
         id: driver.id.substring(0, 5).toUpperCase(),
         rawId: driver.id,
         rawBirthDate: driver.birthDate,
@@ -39,7 +39,7 @@ return {
         nickname: driver.nickname,
         nationality: driver.nationality,
         licenseNo: driver.licenseNo,
-        licenseImageUrl: driver.licenseImageUrl,
+        licenseImageUrl: driver.licenseImageUrl, // รูปใบขับแข่ง
         shirtSize: driver.shirtSize,
         bloodType: driver.bloodType,
         mobileNo: driver.mobileNo,
@@ -52,6 +52,7 @@ return {
         events: events,
         payment: paymentStatus,
       };
+    }); // <--- จุดที่วงเล็บมักจะหายไปคือตรงนี้ครับ!
 
     return NextResponse.json({ data: formattedData });
   } catch (error) {
