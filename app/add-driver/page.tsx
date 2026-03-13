@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { COUNTRIES } from '@/lib/countries';
 
 export default function AddDriverPage() {
   const router = useRouter();
@@ -88,10 +89,19 @@ export default function AddDriverPage() {
                 <label className="text-xs font-bold text-gray-500 uppercase">Date of Birth *</label>
                 <input type="date" className="w-full p-3 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white" value={formData.birthDate} onChange={(e) => setFormData({...formData, birthDate: e.target.value})} required />
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Nationality (ex. THA)</label>
-                <input type="text" className="w-full p-3 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white" value={formData.nationality} onChange={(e) => setFormData({...formData, nationality: e.target.value})} />
-              </div>
+ <div className="space-y-1">
+  <label className="text-xs font-bold text-gray-500 uppercase">Nationality</label>
+  <select 
+    className="w-full p-3 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white appearance-none" 
+    value={formData.nationality} 
+    onChange={(e) => setFormData({...formData, nationality: e.target.value})}
+  >
+    <option value="">Select Country...</option>
+    {COUNTRIES.map((c) => (
+      <option key={c.code} value={c.code}>{c.flag} {c.code} - {c.name}</option>
+    ))}
+  </select>
+</div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-500 uppercase">Mobile No.</label>
                 <input type="text" className="w-full p-3 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white" value={formData.mobileNo} onChange={(e) => setFormData({...formData, mobileNo: e.target.value})} />
@@ -140,13 +150,18 @@ export default function AddDriverPage() {
                 <input type="text" className="w-full p-3 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white" value={formData.guardianId} onChange={(e) => setFormData({...formData, guardianId: e.target.value})} />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Guardian Nationality</label>
-                <input type="text" className="w-full p-3 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white" value={formData.guardianNationality} onChange={(e) => setFormData({...formData, guardianNationality: e.target.value})} />
-              </div>
-              <div className="space-y-1 md:col-span-2">
-                <label className="text-xs font-bold text-gray-500 uppercase">Guardian Mobile No.</label>
-                <input type="text" className="w-full p-3 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white" value={formData.guardianMobile} onChange={(e) => setFormData({...formData, guardianMobile: e.target.value})} />
-              </div>
+  <label className="text-xs font-bold text-gray-500 uppercase">Guardian Nationality</label>
+  <select 
+    className="w-full p-3 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white appearance-none" 
+    value={formData.guardianNationality} 
+    onChange={(e) => setFormData({...formData, guardianNationality: e.target.value})}
+  >
+    <option value="">Select Country...</option>
+    {COUNTRIES.map((c) => (
+      <option key={c.code} value={c.code}>{c.flag} {c.code} - {c.name}</option>
+    ))}
+  </select>
+</div>
             </div>
           </div>
 

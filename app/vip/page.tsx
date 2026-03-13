@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { getFlagByCode } from '@/lib/countries';
 
 export default function VipDashboard() {
   const { data: session, status } = useSession();
@@ -77,7 +78,11 @@ export default function VipDashboard() {
                       
                       <div>
                         <h4 className="font-black text-xl text-white uppercase leading-tight">{driver.name}</h4>
-                        <p className="text-[#cba052] text-sm font-bold uppercase">{driver.nickname ? `"${driver.nickname}"` : 'NO NICKNAME'} <span className="text-gray-600 mx-1">|</span> {driver.nationality || 'N/A'}</p>
+                        <p className="text-[#cba052] text-sm font-bold uppercase">
+  {driver.nickname ? `"${driver.nickname}"` : 'NO NICKNAME'} 
+  <span className="text-gray-600 mx-1">|</span> 
+  <span className="text-xl mr-1">{getFlagByCode(driver.nationality)}</span> {driver.nationality || 'N/A'}
+</p>
                       </div>
                     </div>
                     
