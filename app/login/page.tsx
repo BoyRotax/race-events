@@ -1,14 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { signIn, getSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { signIn, getSession, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { status } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // 🚩 ดักไว้ก่อนเลย: ถ้า User ล็อกอินค้างไว้อยู่แล้ว ให้เตะส่งไปหน้า VIP (Garage) ทันที
+  useEffect(() => {
+    if (status === "authenticated") {
+      window.location.href = "/vip";
+    }
+  }, [status]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +36,7 @@ export default function LoginPage() {
       setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
       setLoading(false);
     } else {
-      // 2. ล็อกอินผ่านแล้ว! ดึง Session ล่าสุดมาเช็คยศ
+      // 2. ล็อกอินผ่านแล้ว! เช็คยศ
       const session = await getSession();
       const role = (session?.user as any)?.role;
 
@@ -39,15 +49,24 @@ export default function LoginPage() {
     }
   };
 
+  // ระหว่างที่กำลังโหลดเช็คสถานะการล็อกอิน ให้ขึ้น Loading ไว้
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex justify-center items-center text-[#cba052] font-black tracking-widest text-xl">
+        <i className="fas fa-circle-notch fa-spin mr-3"></i> LOADING PORTAL...
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#111111] flex flex-col justify-center items-center p-4">
-      <div className="max-w-md w-full bg-[#1a1a1a] p-8 rounded-2xl border border-gray-800 shadow-2xl relative overflow-hidden">
+    <div className="min-h-screen bg-[#0a0a0a] flex flex-col justify-center items-center p-4">
+      <div className="max-w-md w-full bg-[#111] p-8 rounded-2xl border border-gray-800 shadow-2xl relative overflow-hidden">
         {/* เส้นตกแต่งด้านบน */}
-        <div className="absolute top-0 left-0 w-full h-1 bg-[#E43138]"></div>
+        <div className="absolute top-0 left-0 w-full h-1 bg-[#cba052]"></div>
 
         <div className="text-center mb-8">
           <h1 className="text-3xl font-black text-white tracking-widest uppercase mb-1">
-            Portal <span className="text-[#E43138]">Login</span>
+            Portal <span className="text-[#cba052]">Login</span>
           </h1>
           <p className="text-sm text-gray-500 font-bold">ลงชื่อเข้าใช้ระบบ Rotax Racing 2026</p>
         </div>
@@ -63,7 +82,7 @@ export default function LoginPage() {
             <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Email Address</label>
             <input 
               type="email" 
-              className="w-full p-4 bg-black border border-gray-800 rounded outline-none focus:border-[#E43138] text-white transition"
+              className="w-full p-4 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white transition"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -74,7 +93,7 @@ export default function LoginPage() {
             <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Password</label>
             <input 
               type="password" 
-              className="w-full p-4 bg-black border border-gray-800 rounded outline-none focus:border-[#E43138] text-white transition"
+              className="w-full p-4 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white transition"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -84,7 +103,7 @@ export default function LoginPage() {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full py-4 mt-4 bg-[#E43138] text-white font-black uppercase tracking-widest rounded hover:bg-red-700 transition disabled:opacity-50 shadow-[0_0_15px_rgba(228,49,56,0.2)]"
+            className="w-full py-4 mt-4 bg-[#cba052] text-black font-black uppercase tracking-widest rounded hover:bg-[#b08d44] transition disabled:opacity-50 shadow-[0_0_15px_rgba(203,160,82,0.3)]"
           >
             {loading ? "AUTHENTICATING..." : "LOGIN TO PORTAL"}
           </button>
@@ -92,7 +111,7 @@ export default function LoginPage() {
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-500 font-bold">
-            ยังไม่มีบัญชี? <Link href="/register" className="text-white hover:text-[#E43138] transition underline">สร้างบัญชีใหม่</Link>
+            ยังไม่มีบัญชี? <Link href="/register" className="text-white hover:text-[#cba052] transition underline">สร้างบัญชีใหม่</Link>
           </p>
         </div>
       </div>
