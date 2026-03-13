@@ -35,6 +35,7 @@ model Driver {
   nickname      String?
   nationality   String?
   licenseNo     String?
+  licenseImageUrl String? @db.Text
   shirtSize     String?
   bloodType     String?
   mobileNo      String?

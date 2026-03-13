@@ -30,6 +30,7 @@ function RegistrationForm() {
     nickname: '',
     nationality: '',
     licenseNo: '',
+    licenseImageUrl: '',
     shirtSize: '',
     bloodType: '',
     mobileNo: '',
@@ -102,6 +103,7 @@ function RegistrationForm() {
     const nameParts = driver.name.split(' ');
     const fName = nameParts[0];
     const lName = nameParts.slice(1).join(' ');
+    const licenseImageUrl: driver.licenseImageUrl || '';
 
     setFormData({
       ...formData,
@@ -125,7 +127,21 @@ function RegistrationForm() {
     });
     setIsEditingProfile(false); // ล็อกข้อมูลไว้ทันที
   };
-
+// 🚩 ฟังก์ชันจัดการเวลาคนกดอัปโหลดรูป
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) { // จำกัดขนาดไฟล์ไม่เกิน 2MB
+        alert("ขนาดไฟล์รูปใหญ่เกินไป กรุณาใช้รูปขนาดไม่เกิน 2MB ครับ");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, licenseImageUrl: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   // 🚩 ฟังก์ชันเคลียร์ฟอร์ม
   const handleNewDriver = () => {
     setFormData({
@@ -286,6 +302,23 @@ function RegistrationForm() {
             <label className="text-xs font-bold text-gray-500 uppercase">License No.</label>
             <input type="text" className="w-full p-3 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white disabled:opacity-50 disabled:bg-[#0a0a0a]" 
               value={formData.licenseNo} onChange={(e) => setFormData({...formData, licenseNo: e.target.value})} disabled={!!formData.driverId && !isEditingProfile} />
+          </div>
+          {/* 🚩 โซนอัปโหลดรูปใบอนุญาตขับแข่ง */}
+          <div className="space-y-2 md:col-span-2 lg:col-span-3 border border-gray-800 p-4 rounded-lg bg-black/50">
+            <label className="text-xs font-bold text-[#cba052] uppercase"><i className="fas fa-id-badge mr-2"></i>Racing License Photo (รูปถ่ายใบอนุญาตแข่งรถ)</label>
+            <input 
+              type="file" 
+              accept="image/*"
+              onChange={handleImageUpload}
+              disabled={!!formData.driverId && !isEditingProfile}
+              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-[#E43138] file:text-white hover:file:bg-red-700 cursor-pointer disabled:opacity-50"
+            />
+            {formData.licenseImageUrl && (
+              <div className="mt-3">
+                <p className="text-xs text-green-500 mb-1"><i className="fas fa-check-circle"></i> อัปโหลดรูปภาพแล้ว</p>
+                <img src={formData.licenseImageUrl} alt="License Preview" className="h-32 rounded border border-gray-700 object-cover shadow-lg" />
+              </div>
+            )}
           </div>
         </div>
       </div>

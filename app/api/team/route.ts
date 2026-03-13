@@ -40,6 +40,7 @@ return {
         nickname: driver.nickname,
         nationality: driver.nationality,
         licenseNo: driver.licenseNo,
+        licenseImageUrl: driver.licenseImageUrl,
         shirtSize: driver.shirtSize,
         bloodType: driver.bloodType,
         mobileNo: driver.mobileNo,

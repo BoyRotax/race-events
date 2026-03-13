@@ -15,9 +15,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // 🚩 รับข้อมูลใหม่เข้ามาให้ครบ
-    const { 
+ const { 
       driverId, firstName, lastName, birthDate, racingNumber, events, primaryClass, crossEntry,
-      nickname, nationality, licenseNo, shirtSize, bloodType, mobileNo,
+      nickname, nationality, licenseNo, licenseImageUrl, shirtSize, bloodType, mobileNo, // 🚩 เพิ่ม licenseImageUrl
       guardianName, guardianId, guardianNationality, guardianMobile 
     } = body;
 
@@ -51,9 +51,9 @@ export async function POST(request: NextRequest) {
     }));
 
     // 🚩 ก้อนข้อมูลส่วนตัวนักแข่งที่จะบันทึก (ยุบรวมไว้จะได้โค้ดไม่ยาว)
-    const driverData = {
+const driverData = {
       firstName, lastName, birthDate: new Date(birthDate),
-      nickname, nationality, licenseNo, shirtSize, bloodType, mobileNo,
+      nickname, nationality, licenseNo, licenseImageUrl, shirtSize, bloodType, mobileNo, // 🚩 เพิ่มตรงนี้
       guardianName, guardianId, guardianNationality, guardianMobile
     };
 
