@@ -17,10 +17,11 @@ enum Role {
 
 model User {
   id          String   @id @default(cuid())
-  email       String   @unique
-  password    String
+  email       String?   @unique
+  password    String?
   name        String?  // ชื่อผู้สมัคร หรือ ชื่อทีม
-  role        Role     @default(USER) // สมัครใหม่เป็น USER ธรรมดาเสมอ
+  role        String    @default(USER) // สมัครใหม่เป็น USER ธรรมดาเสมอ
+  drivers     Driver[]
   createdAt   DateTime @default(now())
   drivers     Driver[] // User 1 คน มีนักแข่งในการดูแลได้ (ถ้าเป็น VIP จะมีหลายคน)
 }
