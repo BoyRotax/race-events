@@ -33,6 +33,8 @@ export async function GET(request: NextRequest) {
 
       return {
         id: driver.id.substring(0, 5).toUpperCase(), // ตัด ID ให้สั้นๆ เท่ๆ
+        rawId: driver.id,
+        rawBirthDate: driver.birthDate,
         name: `${driver.firstName} ${driver.lastName}`,
         category: primaryClass,
         crossEntry: crossEntry,

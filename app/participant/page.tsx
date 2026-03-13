@@ -22,6 +22,7 @@ function RegistrationForm() {
   const router = useRouter();
 
   const [formData, setFormData] = useState({
+    driverId: '', // 🚩 เพิ่มฟิลด์นี้เก็บ ID คนเก่า
     firstName: '',
     lastName: '',
     birthDate: '',
@@ -33,6 +34,10 @@ function RegistrationForm() {
   const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
   const [availableClasses, setAvailableClasses] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // 🚩 State สำหรับเก็บนักแข่งเก่าในทีม
+  const [teamDrivers, setTeamDrivers] = useState<any[]>([]);
+  const [fetchingDrivers, setFetchingDrivers] = useState(true);
 
   // 1. ดึงข้อมูลสนามที่เลือกมาจากหน้า Dashboard
   useEffect(() => {
@@ -41,6 +46,24 @@ function RegistrationForm() {
       setSelectedEvents(eventsParam.split(','));
     }
   }, [searchParams]);
+
+  // 🚩 1.5 ดึงรายชื่อนักแข่งในทีมมาโชว์
+  useEffect(() => {
+    const fetchTeamDrivers = async () => {
+      try {
+        const res = await fetch('/api/team');
+        if (res.ok) {
+          const json = await res.json();
+          setTeamDrivers(json.data || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch drivers", err);
+      } finally {
+        setFetchingDrivers(false);
+      }
+    };
+    fetchTeamDrivers();
+  }, []);
 
   // 2. คำนวณอายุและล็อครุ่น (ตามกฎ RMCAT 2026)
   useEffect(() => {
@@ -65,6 +88,35 @@ function RegistrationForm() {
       setAvailableClasses([]);
     }
   }, [formData.birthDate]);
+
+  // 🚩 ฟังก์ชันเมื่อกดเลือกนักแข่งเก่า
+  const handleSelectExistingDriver = (driver: any) => {
+    // แตกชื่อนามสกุลออกจากกัน (เพราะ API เราส่งแบบรวมมา)
+    const nameParts = driver.name.split(' ');
+    const fName = nameParts[0];
+    const lName = nameParts.slice(1).join(' ');
+
+    setFormData({
+      ...formData,
+      driverId: driver.rawId, // ต้องมั่นใจว่า API ส่ง rawId มาด้วย (เดี๋ยวเราไปแก้ API นิดนึงถ้าไม่มี)
+      firstName: fName,
+      lastName: lName,
+      birthDate: driver.rawBirthDate ? new Date(driver.rawBirthDate).toISOString().split('T')[0] : '', // ดึงวันเกิด
+    });
+  };
+
+  // 🚩 ฟังก์ชันเคลียร์ฟอร์มเพื่อกรอกใหม่
+  const handleNewDriver = () => {
+    setFormData({
+      ...formData,
+      driverId: '',
+      firstName: '',
+      lastName: '',
+      birthDate: '',
+      primaryClass: '',
+      crossEntry: false
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,7 +150,6 @@ function RegistrationForm() {
     }
   };
 
-  // คำนวณยอดเงินรวม (โชว์ให้ User ดู)
   const baseFee = ENTRY_FEES[formData.primaryClass] || 0;
   const totalFee = baseFee * selectedEvents.length;
 
@@ -126,18 +177,70 @@ function RegistrationForm() {
         )}
       </div>
 
+      {/* 🚩 โซนเลือกนักแข่งในคลัง (My Garage) */}
+      <div className="bg-black p-6 rounded-xl border border-gray-800 shadow-lg relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-1 h-full bg-[#cba052]"></div>
+        <h3 className="text-lg font-bold mb-4 text-[#cba052] uppercase tracking-tight"><i className="fas fa-id-card mr-2"></i>Select Driver</h3>
+        
+        {fetchingDrivers ? (
+          <div className="text-gray-500 text-sm"><i className="fas fa-spinner fa-spin mr-2"></i> Loading Garage...</div>
+        ) : teamDrivers.length > 0 ? (
+          <div className="flex flex-wrap gap-3">
+            {/* ปุ่มกดเลือกคนใหม่ */}
+            <button 
+              type="button" 
+              onClick={handleNewDriver}
+              className={`px-4 py-2 rounded-lg text-sm font-bold border-2 transition ${!formData.driverId ? 'border-[#E43138] bg-[#E43138]/20 text-white' : 'border-gray-800 text-gray-400 hover:border-gray-600'}`}
+            >
+              <i className="fas fa-plus mr-2"></i> นักแข่งใหม่
+            </button>
+            
+            {/* รายชื่อคนในทีม */}
+            {teamDrivers.map((driver, idx) => (
+              <button 
+                key={idx} 
+                type="button"
+                onClick={() => handleSelectExistingDriver(driver)}
+                className={`px-4 py-2 rounded-lg text-sm font-bold border-2 transition ${formData.driverId === driver.rawId ? 'border-[#cba052] bg-[#cba052]/20 text-white' : 'border-gray-800 text-gray-400 hover:border-gray-600 bg-[#111]'}`}
+              >
+                <i className="fas fa-user mr-2"></i> {driver.name}
+              </button>
+            ))}
+          </div>
+        ) : (
+           <p className="text-gray-500 text-sm">ยังไม่มีนักแข่งในทีม กรุณากรอกข้อมูลนักแข่งใหม่ด้านล่าง</p>
+        )}
+      </div>
+
       {/* ข้อมูลส่วนตัว */}
-      <div className="bg-[#1a1a1a] p-6 rounded-xl border border-gray-800 shadow-lg">
-        <h3 className="text-lg font-bold mb-4 text-[#cba052] uppercase tracking-tight">1. Personal Info</h3>
+      <div className={`p-6 rounded-xl border shadow-lg transition-all ${formData.driverId ? 'bg-black border-gray-800 opacity-80' : 'bg-[#1a1a1a] border-gray-800'}`}>
+        <h3 className="text-lg font-bold mb-4 text-[#cba052] uppercase tracking-tight">
+          1. Personal Info {formData.driverId && <span className="text-xs text-gray-500 ml-2">(ข้อมูลจากประวัติเดิม)</span>}
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <input type="text" placeholder="First Name" className="p-4 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white" 
-            onChange={(e) => setFormData({...formData, firstName: e.target.value})} required />
-          <input type="text" placeholder="Last Name" className="p-4 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white" 
-            onChange={(e) => setFormData({...formData, lastName: e.target.value})} required />
+          <input type="text" placeholder="First Name" 
+            className="p-4 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white disabled:opacity-50" 
+            value={formData.firstName}
+            onChange={(e) => setFormData({...formData, firstName: e.target.value})} 
+            required 
+            disabled={!!formData.driverId} // ล็อกไว้ถ้าเป็นคนเก่า
+          />
+          <input type="text" placeholder="Last Name" 
+            className="p-4 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white disabled:opacity-50" 
+            value={formData.lastName}
+            onChange={(e) => setFormData({...formData, lastName: e.target.value})} 
+            required 
+            disabled={!!formData.driverId}
+          />
           <div className="md:col-span-2">
             <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Date of Birth</label>
-            <input type="date" className="w-full p-4 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white" 
-              onChange={(e) => setFormData({...formData, birthDate: e.target.value})} required />
+            <input type="date" 
+              className="w-full p-4 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white disabled:opacity-50" 
+              value={formData.birthDate}
+              onChange={(e) => setFormData({...formData, birthDate: e.target.value})} 
+              required 
+              disabled={!!formData.driverId}
+            />
             <p className="text-xs text-gray-500 mt-2">* กรอกวันเกิดเพื่อตรวจสอบรุ่นที่สามารถลงแข่งได้ในปี 2026 อัตโนมัติ</p>
           </div>
         </div>
@@ -147,7 +250,7 @@ function RegistrationForm() {
       <div className="bg-[#1a1a1a] p-6 rounded-xl border border-gray-800 shadow-lg">
         <h3 className="text-lg font-bold mb-4 text-[#cba052] uppercase tracking-tight">2. Select Class & Number</h3>
         
-        {formData.birthDate === '' ? (
+        {!formData.birthDate ? (
           <div className="p-4 bg-black text-gray-500 rounded border border-gray-800 text-center font-bold">
             กรุณาระบุวันเกิดในขั้นตอนที่ 1 เพื่อเลือกรุ่นการแข่งขัน
           </div>
@@ -185,6 +288,7 @@ function RegistrationForm() {
         <div className="mt-4">
            <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Racing Number (หมายเลขรถ)</label>
            <input type="number" placeholder="เช่น 315" className="w-full md:w-1/2 p-4 text-2xl font-black rounded bg-black border border-gray-800 outline-none focus:border-[#cba052] text-white placeholder-gray-700" 
+             value={formData.racingNumber}
              onChange={(e) => setFormData({...formData, racingNumber: e.target.value})} required />
         </div>
       </div>
@@ -216,7 +320,6 @@ export default function ParticipantPage() {
         <h2 className="text-3xl font-black text-white uppercase tracking-tight mb-2">Driver <span className="text-[#E43138]">Registration</span></h2>
         <p className="text-gray-400 mb-8 font-bold">กรอกข้อมูลนักแข่งเพื่อเข้าร่วมการแข่งขันที่ท่านเลือก</p>
         
-        {/* ครอบด้วย Suspense ป้องกัน Error การดึง URL Parameters */}
         <Suspense fallback={<div className="text-center p-10 text-gray-500 font-bold"><i className="fas fa-spinner fa-spin mr-2"></i> LOADING FORM...</div>}>
           <RegistrationForm />
         </Suspense>
