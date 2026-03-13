@@ -38,6 +38,8 @@ function RegistrationForm() {
   // 🚩 State สำหรับเก็บนักแข่งเก่าในทีม
   const [teamDrivers, setTeamDrivers] = useState<any[]>([]);
   const [fetchingDrivers, setFetchingDrivers] = useState(true);
+  // 🚩 State สำหรับปุ่ม Edit ปลดล็อกข้อมูล
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   // 1. ดึงข้อมูลสนามที่เลือกมาจากหน้า Dashboard
   useEffect(() => {
@@ -92,6 +94,8 @@ function RegistrationForm() {
   // 🚩 ฟังก์ชันเมื่อกดเลือกนักแข่งเก่า
   const handleSelectExistingDriver = (driver: any) => {
     // แตกชื่อนามสกุลออกจากกัน (เพราะ API เราส่งแบบรวมมา)
+    setIsEditingProfile(false); // 🚩 ปิดโหมดแก้ไขเมื่อเลือกคนใหม่
+  };
     const nameParts = driver.name.split(' ');
     const fName = nameParts[0];
     const lName = nameParts.slice(1).join(' ');
@@ -108,6 +112,8 @@ function RegistrationForm() {
   // 🚩 ฟังก์ชันเคลียร์ฟอร์มเพื่อกรอกใหม่
   const handleNewDriver = () => {
     setFormData({
+      setIsEditingProfile(false); // 🚩 ปิดโหมดแก้ไขเมื่อกดสร้างคนใหม่
+  };
       ...formData,
       driverId: '',
       firstName: '',
@@ -212,36 +218,50 @@ function RegistrationForm() {
         )}
       </div>
 
-      {/* ข้อมูลส่วนตัว */}
-      <div className={`p-6 rounded-xl border shadow-lg transition-all ${formData.driverId ? 'bg-black border-gray-800 opacity-80' : 'bg-[#1a1a1a] border-gray-800'}`}>
-        <h3 className="text-lg font-bold mb-4 text-[#cba052] uppercase tracking-tight">
-          1. Personal Info {formData.driverId && <span className="text-xs text-gray-500 ml-2">(ข้อมูลจากประวัติเดิม)</span>}
-        </h3>
+{/* ข้อมูลส่วนตัว */}
+      <div className={`p-6 rounded-xl border shadow-lg transition-all ${formData.driverId && !isEditingProfile ? 'bg-black border-gray-800 opacity-80' : 'bg-[#1a1a1a] border-gray-800'}`}>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-bold text-[#cba052] uppercase tracking-tight">
+            1. Personal Info {formData.driverId && !isEditingProfile && <span className="text-xs text-gray-500 ml-2">(ข้อมูลประวัติเดิม)</span>}
+          </h3>
+          
+          {/* 🚩 ปุ่มกดเพื่อปลดล็อกแก้ไขข้อมูล */}
+          {formData.driverId && (
+            <button 
+              type="button" 
+              onClick={() => setIsEditingProfile(!isEditingProfile)} 
+              className={`text-xs px-3 py-1.5 rounded font-bold transition border ${isEditingProfile ? 'bg-red-900/50 text-red-400 border-red-700' : 'bg-gray-800 text-gray-300 border-gray-600 hover:bg-gray-700'}`}
+            >
+              <i className={`fas ${isEditingProfile ? 'fa-times' : 'fa-edit'} mr-1`}></i> 
+              {isEditingProfile ? "ยกเลิกการแก้ไข" : "แก้ไขข้อมูล"}
+            </button>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <input type="text" placeholder="First Name" 
-            className="p-4 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white disabled:opacity-50" 
+            className="p-4 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white disabled:opacity-50 disabled:bg-[#0a0a0a]" 
             value={formData.firstName}
             onChange={(e) => setFormData({...formData, firstName: e.target.value})} 
             required 
-            disabled={!!formData.driverId} // ล็อกไว้ถ้าเป็นคนเก่า
+            disabled={!!formData.driverId && !isEditingProfile} // 🚩 ล็อกเมื่อเป็นคนเก่าและไม่ได้กด Edit
           />
           <input type="text" placeholder="Last Name" 
-            className="p-4 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white disabled:opacity-50" 
+            className="p-4 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white disabled:opacity-50 disabled:bg-[#0a0a0a]" 
             value={formData.lastName}
             onChange={(e) => setFormData({...formData, lastName: e.target.value})} 
             required 
-            disabled={!!formData.driverId}
+            disabled={!!formData.driverId && !isEditingProfile}
           />
           <div className="md:col-span-2">
             <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Date of Birth</label>
             <input type="date" 
-              className="w-full p-4 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white disabled:opacity-50" 
+              className="w-full p-4 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white disabled:opacity-50 disabled:bg-[#0a0a0a]" 
               value={formData.birthDate}
               onChange={(e) => setFormData({...formData, birthDate: e.target.value})} 
               required 
-              disabled={!!formData.driverId}
+              disabled={!!formData.driverId && !isEditingProfile}
             />
-            <p className="text-xs text-gray-500 mt-2">* กรอกวันเกิดเพื่อตรวจสอบรุ่นที่สามารถลงแข่งได้ในปี 2026 อัตโนมัติ</p>
           </div>
         </div>
       </div>
