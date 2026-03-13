@@ -7,70 +7,62 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// 🚩 สร้างยศให้ระบบ
 enum Role {
-  STANDARD
+  USER
   VIP
+  STAFF
   ADMIN
-  TECHNIC
-  OFFICE
-}
-
-enum RegStatus {
-  PENDING
-  PAID
-  CONFIRMED
 }
 
 model User {
-  id             String   @id @default(uuid())
-  email          String   @unique
-  password       String
-  role           Role     @default(STANDARD)
-  entrantName    String?  
-  entrantLicense String? 
-  phone          String?
-  drivers        Driver[] 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String
+  name        String?  // ชื่อผู้สมัคร หรือ ชื่อทีม
+  role        Role     @default(USER) // สมัครใหม่เป็น USER ธรรมดาเสมอ
+  createdAt   DateTime @default(now())
+  drivers     Driver[] // User 1 คน มีนักแข่งในการดูแลได้ (ถ้าเป็น VIP จะมีหลายคน)
 }
 
 model Driver {
-  id             String         @id @default(uuid())
-  userId         String         
-  user           User           @relation(fields: [userId], references: [id])
-  firstName      String
-  lastName       String
-  birthDate      DateTime       
-  nationality    String?
-  chassisBrand   String?        
-  registrations  Registration[] 
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id           String   @id @default(cuid())
+  firstName    String
+  lastName     String
+  birthDate    DateTime
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  registrations Registration[]
 }
 
 model Event {
-  id              String         @id @default(uuid())
-  name            String         
-  series          String         
-  raceWeekendId   String         
-  startDate       DateTime
-  endDate         DateTime
-  isActive        Boolean        @default(true) 
-  registrations   Registration[]
+  id             String   @id
+  name           String
+  location       String
+  startDate      DateTime
+  endDate        DateTime
+  isDoubleHeader Boolean  @default(false) // 🚩 ระบุว่าเป็นสนามควบ TH+ASIA หรือไม่
+  registrations  Registration[]
 }
 
 model Registration {
-  id              String    @id @default(uuid())
-  driverId        String
-  driver          Driver    @relation(fields: [driverId], references: [id])
-  eventId         String
-  event           Event     @relation(fields: [eventId], references: [id])
-  category        String    
-  racingNumber    Int       
-  transponder     String?   
-  status          RegStatus @default(PENDING)
-  createdAt       DateTime  @default(now())
+  id            String   @id @default(cuid())
+  driverId      String
+  eventId       String
+  category      String   // รุ่นหลัก เช่น Micro MAX
+  crossEntry    String?  // รุ่นควบ เช่น Micro Rookie
+  racingNumber  Int
+  paymentStatus String   @default("PENDING")
+  createdAt     DateTime @default(now())
 
-  // 🚩 อัปเดตให้รองรับการลงควบรุ่น
-  @@unique([driverId, eventId, category]) 
+  driver        Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+// 🚩 ตารางใหม่ สำหรับให้ Admin แก้ข้อความหน้าเว็บ
+model SiteSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique // เช่น "WELCOME_TITLE", "ANNOUNCEMENT"
+  value       String   // ข้อความที่จะโชว์
+  updatedAt   DateTime @updatedAt
 }

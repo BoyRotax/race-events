@@ -10,23 +10,22 @@ export async function POST(req: Request) {
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      return NextResponse.json({ error: "Email นี้มีในระบบแล้ว" }, { status: 400 });
+      return NextResponse.json({ error: "อีเมลนี้ถูกใช้งานแล้ว" }, { status: 400 });
     }
 
-    // เข้ารหัสรหัสผ่าน 10 ชั้นก่อนเซฟ
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
-        entrantName,
-        role: "VIP",
+        name: entrantName,
+        role: "USER", // 🚩 สมัครใหม่ทุกคนเป็นแค่ USER ธรรมดา
       },
     });
 
-    return NextResponse.json({ message: "Account Created!", userId: user.id });
+    return NextResponse.json({ message: "สมัครสมาชิกสำเร็จ!", userId: user.id });
   } catch (error) {
-    return NextResponse.json({ error: "Register Failed" }, { status: 500 });
+    return NextResponse.json({ error: "เกิดข้อผิดพลาดในการสมัคร" }, { status: 500 });
   }
 }
