@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' } // เรียงจากสมัครล่าสุดขึ้นก่อน
     });
 
-    // 3. กรองเอาเฉพาะคนที่ "ลงสนามแล้ว" (คนที่มีประวัติใน Garage แต่ยังไม่ลงสนามจะไม่โชว์ในหน้านี้)
+// 3. กรองเอาเฉพาะคนที่ "ลงสนามแล้ว"
     const activeRegistrations = drivers.filter(d => d.registrations.length > 0).map(driver => {
       return {
         id: driver.id,
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
         events: driver.registrations.map(r => r.eventId),
         paymentStatus: driver.registrations[0]?.paymentStatus || 'PENDING',
         licenseImageUrl: driver.licenseImageUrl,
-        // slipImageUrl: driver.registrations[0]?.slipImageUrl // (เตรียมไว้สำหรับอนาคต)
+        slipImageUrl: driver.registrations[0]?.slipImageUrl // 🚩 ปลดล็อกบรรทัดนี้แล้ว!
       };
     });
 
