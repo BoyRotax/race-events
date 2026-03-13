@@ -150,11 +150,16 @@ export default function AddDriverPage() {
             </div>
           </div>
 
-          <div className="bg-black p-6 rounded-xl border border-gray-800 flex justify-end shadow-2xl sticky bottom-8 z-40">
-            <button type="submit" disabled={loading} className="w-full md:w-auto px-10 py-4 font-black tracking-widest text-white bg-[#E43138] rounded-lg hover:bg-red-700 transition disabled:opacity-50 shadow-[0_0_20px_rgba(228,49,56,0.3)]">
-              {loading ? 'SAVING PROFILE...' : 'SAVE DRIVER PROFILE'} <i className="fas fa-save ml-2"></i>
-            </button>
-          </div>
+{/* แก้ไขส่วนปุ่ม Save ด้านล่างสุด */}
+<div className="bg-[#1a1a1a] p-6 rounded-xl border border-gray-800 flex justify-end shadow-2xl mt-8 mb-20">
+  <button 
+    type="submit" 
+    disabled={loading} 
+    className="w-full md:w-auto px-10 py-4 font-black tracking-widest text-white bg-[#E43138] rounded-lg hover:bg-red-700 transition disabled:opacity-50 shadow-[0_0_20px_rgba(228,49,56,0.2)]"
+  >
+    {loading ? 'SAVING PROFILE...' : 'SAVE DRIVER PROFILE'} <i className="fas fa-save ml-2"></i>
+  </button>
+</div>
 
         </form>
       </div>

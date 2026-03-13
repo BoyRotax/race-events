@@ -257,16 +257,24 @@ function RegistrationForm() {
           </div>
         )}
       </div>
-
-      <div className="bg-black p-6 rounded-xl border border-gray-800 flex justify-between items-center shadow-2xl sticky bottom-8 z-40">
-        <div>
-          <p className="text-gray-500 font-bold text-sm uppercase">Total Entry Fee</p>
-          <div className="text-3xl font-black text-white">{totalFee > 0 ? formatTHB(totalFee) : '฿ 0'}</div>
-        </div>
-        <button type="submit" disabled={loading || totalFee === 0} className="px-8 py-4 font-black text-white bg-[#E43138] rounded-lg hover:bg-red-700 disabled:opacity-50">
-          {loading ? 'SAVING...' : 'CONFIRM REGISTRATION'}
-        </button>
-      </div>
+{/* แก้ไขส่วนสรุปราคาด้านล่างสุด */}
+<div className="bg-black p-6 rounded-xl border border-gray-800 flex flex-col md:flex-row justify-between items-center shadow-2xl mt-8 mb-20">
+  <div className="mb-4 md:mb-0 text-center md:text-left">
+    <p className="text-gray-500 font-bold text-sm uppercase">Total Entry Fee</p>
+    <div className="text-3xl font-black text-white">
+      {totalFee > 0 ? formatTHB(totalFee) : '฿ 0'}
+    </div>
+    {totalFee > 0 && <p className="text-xs text-[#E43138] mt-1">{formatTHB(baseFee)} x {selectedEvents.length} Event(s)</p>}
+  </div>
+  
+  <button 
+    type="submit" 
+    disabled={loading || totalFee === 0} 
+    className="w-full md:w-auto px-10 py-4 font-black tracking-widest text-white bg-[#E43138] rounded-lg hover:bg-red-700 transition disabled:opacity-50 shadow-[0_0_20px_rgba(228,49,56,0.3)]"
+  >
+    {loading ? 'SAVING...' : 'CONFIRM REGISTRATION'}
+  </button>
+</div>
     </form>
   );
 }
