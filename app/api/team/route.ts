@@ -1,28 +1,30 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { getToken } from 'next-auth/jwt';
 
 const prisma = new PrismaClient();
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const vipUser = await prisma.user.findUnique({
-      where: { email: 'vip@ptcreative.com' }
-    });
-
-    if (!vipUser) {
-       return NextResponse.json({ data: [] });
+    // 🔒 1. เช็คว่าใครกำลัง Login อยู่
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    
+    if (!token || !token.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // 🔍 2. ดึงข้อมูลนักแข่ง เฉพาะของ "ทีม(User) นี้" เท่านั้น!
     const drivers = await prisma.driver.findMany({
-      where: { userId: vipUser.id },
+      where: { userId: token.id as string },
       include: { 
         registrations: {
           include: { event: true }
         } 
-      }
-      // 🚩 เอา orderBy ออกเช่นกันครับ
+      },
+      orderBy: { id: 'desc' } // เรียงจากล่าสุด
     });
 
+    // 📦 3. จัดระเบียบข้อมูลส่งให้หน้าบ้านโชว์สวยๆ
     const formattedData = drivers.map(driver => {
       const primaryClass = driver.registrations[0]?.category || 'Unknown';
       const crossEntry = driver.registrations[0]?.crossEntry || null;
@@ -30,7 +32,7 @@ export async function GET(request: Request) {
       const paymentStatus = driver.registrations[0]?.paymentStatus || 'PENDING';
 
       return {
-        id: driver.id.substring(0, 5).toUpperCase(),
+        id: driver.id.substring(0, 5).toUpperCase(), // ตัด ID ให้สั้นๆ เท่ๆ
         name: `${driver.firstName} ${driver.lastName}`,
         category: primaryClass,
         crossEntry: crossEntry,
