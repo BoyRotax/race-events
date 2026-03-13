@@ -36,7 +36,6 @@ return {
         rawId: driver.id,
         rawBirthDate: driver.birthDate,
         name: `${driver.firstName} ${driver.lastName}`,
-        // 🚩 แนบข้อมูลใหม่ไปให้หน้าบ้านด้วย
         nickname: driver.nickname,
         nationality: driver.nationality,
         licenseNo: driver.licenseNo,
@@ -48,7 +47,6 @@ return {
         guardianId: driver.guardianId,
         guardianNationality: driver.guardianNationality,
         guardianMobile: driver.guardianMobile,
-        // ---------------------------------
         category: primaryClass,
         crossEntry: crossEntry,
         events: events,
