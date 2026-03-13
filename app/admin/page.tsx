@@ -1,93 +1,102 @@
 "use client";
+
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
 
 export default function AdminDashboard() {
-  const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: session, status } = useSession();
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  if (status === "loading") {
+    return <div className="min-h-screen bg-[#111111] flex justify-center items-center text-[#E43138] font-black text-2xl tracking-widest"><i className="fas fa-circle-notch fa-spin mr-3"></i> LOADING CONTROL PANEL...</div>;
+  }
 
-  const fetchUsers = async () => {
-    const res = await fetch("/api/admin/users");
-    const json = await res.json();
-    setUsers(json.data);
-    setLoading(false);
-  };
-
-  const updateRole = async (userId: string, newRole: string) => {
-    const res = await fetch("/api/admin/users", {
-      method: "PUT",
-      body: JSON.stringify({ userId, role: newRole }),
-      headers: { "Content-Type": "application/json" }
-    });
-    if (res.ok) {
-      alert("✅ อัปเดตสิทธิ์สำเร็จ");
-      fetchUsers(); // โหลดข้อมูลใหม่
-    }
-  };
+  // ป้องกันคนที่ไม่ใช่แอดมินแอบเข้าหน้านี้
+  if (status === "unauthenticated" || (session?.user as any)?.role !== "ADMIN") {
+    return (
+      <div className="min-h-screen bg-[#111111] flex flex-col justify-center items-center text-white">
+        <i className="fas fa-lock text-6xl text-red-600 mb-4"></i>
+        <h1 className="text-3xl font-black uppercase mb-2">Access Denied</h1>
+        <p className="text-gray-500 mb-6">คุณไม่มีสิทธิ์เข้าถึงระบบหลังบ้าน</p>
+        <Link href="/" className="px-6 py-3 bg-[#E43138] rounded font-bold hover:bg-red-700 transition">กลับสู่หน้าหลัก</Link>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[#f4f6f8] p-8 font-sans">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="bg-purple-600 p-4 rounded-xl shadow-lg">
-            <i className="fas fa-shield-alt text-white text-3xl"></i>
-          </div>
+    <div className="min-h-screen bg-[#0a0a0a] text-white p-4 md:p-8 font-sans pb-20">
+      <div className="max-w-7xl mx-auto mt-4">
+        
+        {/* 🏁 Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-gray-800 pb-6">
           <div>
-            <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tight">System Admin</h2>
-            <p className="text-gray-500 font-bold">ระบบจัดการผู้ใช้งานและสิทธิ์การเข้าถึง (Role Management)</p>
+            <div className="text-[#E43138] font-black text-xs tracking-widest uppercase mb-1">Rotax Racing 2026</div>
+            <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight">
+              ADMIN <span className="text-gray-600">CONTROL PANEL</span>
+            </h1>
+          </div>
+          <div className="mt-4 md:mt-0 flex items-center bg-[#1a1a1a] px-4 py-2 rounded-lg border border-gray-800">
+            <div className="w-10 h-10 rounded-full bg-[#cba052] flex items-center justify-center text-black font-bold mr-3">
+              <i className="fas fa-user-shield"></i>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 font-bold uppercase">Logged in as</p>
+              <p className="font-bold text-white leading-tight">{session?.user?.name}</p>
+            </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-5 border-b border-gray-100 bg-gray-50 flex justify-between">
-            <h3 className="font-bold text-gray-700"><i className="fas fa-users mr-2"></i> Registered Accounts</h3>
-            <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded font-bold">Total: {users.length}</span>
+        {/* 📊 สถิติแบบเร็วๆ (Mockup ไว้ก่อน เดี๋ยวเรามาต่อ API ดึงของจริงทีหลัง) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <div className="bg-[#111] p-6 rounded-xl border border-gray-800 border-l-4 border-l-[#E43138] shadow-lg">
+            <p className="text-gray-500 font-bold text-sm uppercase mb-1">Total Registered Drivers</p>
+            <h3 className="text-4xl font-black text-white">0 <span className="text-sm text-gray-600 font-normal">Drivers</span></h3>
           </div>
-          
-          <table className="w-full text-left border-collapse text-sm">
-            <thead>
-              <tr className="bg-white text-xs uppercase tracking-wider text-gray-500 border-b-2 border-gray-200">
-                <th className="p-4">Name / Team</th>
-                <th className="p-4">Email</th>
-                <th className="p-4">Current Role</th>
-                <th className="p-4 text-right">Change Role</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {loading ? (
-                <tr><td colSpan={4} className="p-8 text-center text-gray-500 font-bold">Loading...</td></tr>
-              ) : users.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50 transition">
-                  <td className="p-4 font-bold text-gray-800">{user.name}</td>
-                  <td className="p-4 text-gray-500">{user.email}</td>
-                  <td className="p-4">
-                    <span className={`px-2 py-1 rounded text-xs font-black tracking-widest
-                      ${user.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' : 
-                        user.role === 'VIP' ? 'bg-yellow-100 text-yellow-700' :
-                        user.role === 'STAFF' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right">
-                    <select 
-                      value={user.role}
-                      onChange={(e) => updateRole(user.id, e.target.value)}
-                      className="p-2 bg-white border border-gray-300 rounded outline-none focus:border-purple-500 font-bold text-sm cursor-pointer shadow-sm"
-                    >
-                      <option value="USER">USER (นักแข่งอิสระ)</option>
-                      <option value="VIP">VIP (ผู้จัดการทีม)</option>
-                      <option value="STAFF">STAFF (กรรมการ/ตรวจสภาพ)</option>
-                      <option value="ADMIN">ADMIN (ผู้จัด)</option>
-                    </select>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="bg-[#111] p-6 rounded-xl border border-gray-800 border-l-4 border-l-[#cba052] shadow-lg">
+            <p className="text-gray-500 font-bold text-sm uppercase mb-1">Total Teams (VIP)</p>
+            <h3 className="text-4xl font-black text-white">0 <span className="text-sm text-gray-600 font-normal">Teams</span></h3>
+          </div>
+          <div className="bg-[#111] p-6 rounded-xl border border-gray-800 border-l-4 border-l-green-500 shadow-lg">
+            <p className="text-gray-500 font-bold text-sm uppercase mb-1">Total Revenue (THB)</p>
+            <h3 className="text-4xl font-black text-white">฿ 0</h3>
+          </div>
         </div>
+
+        {/* 🎛️ เมนูจัดการระบบ */}
+        <h3 className="text-xl font-bold text-[#cba052] uppercase tracking-tight mb-4"><i className="fas fa-cogs mr-2"></i> System Management</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          
+          {/* เมนูจัดการใบสมัคร */}
+          <Link href="/admin/registrations" className="bg-[#111] p-6 rounded-xl border border-gray-800 hover:border-[#E43138] hover:bg-[#1a1a1a] transition group block">
+            <i className="fas fa-file-invoice text-3xl text-gray-600 group-hover:text-[#E43138] mb-4 transition"></i>
+            <h4 className="font-bold text-white uppercase mb-1">Registrations</h4>
+            <p className="text-xs text-gray-500">ตรวจสอบใบสมัคร, ตรวจสลิปโอนเงิน และอนุมัติสถานะนักแข่ง</p>
+          </Link>
+
+          {/* เมนูจัดการผู้ใช้งาน */}
+          <Link href="/admin/users" className="bg-[#111] p-6 rounded-xl border border-gray-800 hover:border-[#cba052] hover:bg-[#1a1a1a] transition group block">
+            <i className="fas fa-users-cog text-3xl text-gray-600 group-hover:text-[#cba052] mb-4 transition"></i>
+            <h4 className="font-bold text-white uppercase mb-1">Users & Teams</h4>
+            <p className="text-xs text-gray-500">จัดการสิทธิ์ผู้ใช้งาน (เลื่อนยศเป็น VIP) และดูข้อมูลคลังนักแข่งของแต่ละทีม</p>
+          </Link>
+
+          {/* เมนูจัดการสนามและราคา */}
+          <Link href="/admin/events" className="bg-[#111] p-6 rounded-xl border border-gray-800 hover:border-blue-500 hover:bg-[#1a1a1a] transition group block">
+            <i className="fas fa-flag-checkered text-3xl text-gray-600 group-hover:text-blue-500 mb-4 transition"></i>
+            <h4 className="font-bold text-white uppercase mb-1">Events & Pricing</h4>
+            <p className="text-xs text-gray-500">เปิด/ปิดสนามแข่งขัน, ตั้งราคาค่าสมัคร, กำหนดรุ่นการแข่งขัน</p>
+          </Link>
+
+          {/* เมนูจัดการข้อมูลตั้งต้น (เช่น ประเทศ) */}
+          <Link href="/admin/settings" className="bg-[#111] p-6 rounded-xl border border-gray-800 hover:border-purple-500 hover:bg-[#1a1a1a] transition group block">
+            <i className="fas fa-globe-asia text-3xl text-gray-600 group-hover:text-purple-500 mb-4 transition"></i>
+            <h4 className="font-bold text-white uppercase mb-1">Master Data</h4>
+            <p className="text-xs text-gray-500">ตั้งค่ารายชื่อประเทศ, ธงชาติ, ไซส์เสื้อ และกฎเกณฑ์ระบบพื้นฐาน</p>
+          </Link>
+
+        </div>
+
       </div>
     </div>
   );
