@@ -1,16 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { signIn, getSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { signIn, getSession, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { status } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // 🚩 ดักไว้ก่อนเลย: ถ้า User ล็อกอินค้างไว้อยู่แล้ว ให้เตะส่งไปหน้า VIP (Garage) ทันที
+  useEffect(() => {
+    if (status === "authenticated") {
+      window.location.href = "/vip";
+    }
+  }, [status]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,21 +32,31 @@ export default function LoginPage() {
       password,
     });
 
-if (res?.error) {
+    if (res?.error) {
       setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
       setLoading(false);
     } else {
+      // 2. ล็อกอินผ่านแล้ว! เช็คยศ
       const session = await getSession();
       const role = (session?.user as any)?.role;
 
-      // 🚀 บังคับวาร์ปแบบ Hard Redirect (แก้ปัญหาจำหน้าจอเก่า)
+      // 3. ระบบวาร์ป (Hard Redirect บังคับโหลดหน้าใหม่ ป้องกันหน้าค้าง)
       if (role === "ADMIN") {
         window.location.href = "/admin";
       } else {
-        // 🚩 ทั้ง VIP และ USER ธรรมดา ให้พุ่งไปหน้า Garage (ข้อมูลส่วนตัว/ทีม) ก่อนเลย!
-        window.location.href = "/vip";
+        window.location.href = "/vip"; // วาร์ปไปหน้าจัดการนักแข่ง (Garage)
       }
-    };
+    }
+  };
+
+  // ระหว่างที่กำลังโหลดเช็คสถานะการล็อกอิน ให้ขึ้น Loading ไว้
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex justify-center items-center text-[#cba052] font-black tracking-widest text-xl">
+        <i className="fas fa-circle-notch fa-spin mr-3"></i> LOADING PORTAL...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col justify-center items-center p-4">
@@ -85,7 +103,7 @@ if (res?.error) {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full py-4 mt-4 bg-[#cba052] text-black font-black uppercase tracking-widest rounded hover:bg-[#b08d44] transition disabled:opacity-50"
+            className="w-full py-4 mt-4 bg-[#cba052] text-black font-black uppercase tracking-widest rounded hover:bg-[#b08d44] transition disabled:opacity-50 shadow-[0_0_15px_rgba(203,160,82,0.3)]"
           >
             {loading ? "AUTHENTICATING..." : "LOGIN TO PORTAL"}
           </button>
@@ -99,4 +117,4 @@ if (res?.error) {
       </div>
     </div>
   );
-}};
+}
