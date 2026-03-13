@@ -43,7 +43,7 @@ export default function VipDashboard() {
               {session?.user?.name} <span className="text-gray-600">GARAGE</span>
             </h1>
           </div>
-          <Link href="/dashboard" className="mt-4 md:mt-0 bg-[#E43138] hover:bg-red-700 text-white px-6 py-3 rounded-lg font-black tracking-widest transition shadow-[0_0_15px_rgba(228,49,56,0.3)] flex items-center">
+          <Link href="/add-driver" className="mt-4 md:mt-0 bg-[#E43138] hover:bg-red-700 text-white px-6 py-3 rounded-lg font-black tracking-widest transition shadow-[0_0_15px_rgba(228,49,56,0.3)] flex items-center">
             <i className="fas fa-plus-circle mr-2"></i> REGISTER NEW DRIVER
           </Link>
         </div>
