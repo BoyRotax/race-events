@@ -7,7 +7,6 @@ const prisma = new PrismaClient();
 export async function POST(request: NextRequest) {
   try {
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-    
     if (!token || !token.id) {
       return NextResponse.json({ success: false, error: 'Unauthorized: กรุณาเข้าสู่ระบบ' }, { status: 401 });
     }
@@ -15,8 +14,12 @@ export async function POST(request: NextRequest) {
     const actualUserId = token.id as string;
     const body = await request.json();
     
-    // 🚩 รับค่า driverId เข้ามาด้วย (ถ้ามี = คนเก่า, ถ้าไม่มี = สร้างคนใหม่)
-    const { driverId, firstName, lastName, birthDate, racingNumber, events, primaryClass, crossEntry } = body;
+    // 🚩 รับข้อมูลใหม่เข้ามาให้ครบ
+    const { 
+      driverId, firstName, lastName, birthDate, racingNumber, events, primaryClass, crossEntry,
+      nickname, nationality, licenseNo, shirtSize, bloodType, mobileNo,
+      guardianName, guardianId, guardianNationality, guardianMobile 
+    } = body;
 
     let secondaryClass = null;
     if (crossEntry) {
@@ -47,35 +50,30 @@ export async function POST(request: NextRequest) {
       racingNumber: parseInt(racingNumber)
     }));
 
-    let result;
+    // 🚩 ก้อนข้อมูลส่วนตัวนักแข่งที่จะบันทึก (ยุบรวมไว้จะได้โค้ดไม่ยาว)
+    const driverData = {
+      firstName, lastName, birthDate: new Date(birthDate),
+      nickname, nationality, licenseNo, shirtSize, bloodType, mobileNo,
+      guardianName, guardianId, guardianNationality, guardianMobile
+    };
 
+    let result;
     if (driverId) {
-      // 🔄 กรณีเลือกนักแข่งเก่า: แค่อัปเดตข้อมูลพื้นฐานนิดหน่อย (เผื่อแก้ชื่อ) แล้วเพิ่มสนามใหม่เข้าไป
+      // 🔄 อัปเดตข้อมูลคนเก่า
       result = await prisma.driver.update({
-        where: { 
-          id: driverId,
-          userId: actualUserId // 🔒 ป้องกันคนแฮ็กไปแก้ข้อมูลทีมนื่น
-        },
+        where: { id: driverId, userId: actualUserId },
         data: {
-          firstName,
-          lastName,
-          birthDate: new Date(birthDate),
-          registrations: {
-            create: registrationsData
-          }
+          ...driverData,
+          registrations: { create: registrationsData }
         }
       });
     } else {
-      // 🆕 กรณีสร้างนักแข่งใหม่
+      // 🆕 สร้างคนใหม่
       result = await prisma.driver.create({
         data: {
-          firstName,
-          lastName,
-          birthDate: new Date(birthDate),
+          ...driverData,
           userId: actualUserId,
-          registrations: {
-            create: registrationsData
-          }
+          registrations: { create: registrationsData }
         }
       });
     }

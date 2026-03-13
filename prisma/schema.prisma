@@ -26,13 +26,31 @@ model User {
 }
 
 model Driver {
-  id           String   @id @default(cuid())
-  firstName    String
-  lastName     String
-  birthDate    DateTime
-  userId       String
-  user         User     @relation(fields: [userId], references: [id])
+  id            String   @id @default(cuid())
+  firstName     String
+  lastName      String
+  birthDate     DateTime
+  
+  // 🚩 --- ข้อมูลนักแข่งเพิ่มเติม (RMCAT) ---
+  nickname      String?
+  nationality   String?
+  licenseNo     String?
+  shirtSize     String?
+  bloodType     String?
+  mobileNo      String?
+  
+  // 🚩 --- ข้อมูลผู้ปกครอง (กรณีอายุไม่ถึง 18) ---
+  guardianName        String?
+  guardianId          String?  // NRIC/FIN/Passport/ID
+  guardianNationality String?
+  guardianMobile      String?
+
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  
   registrations Registration[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Event {

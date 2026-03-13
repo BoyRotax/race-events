@@ -31,17 +31,28 @@ export async function GET(request: NextRequest) {
       const events = [...new Set(driver.registrations.map(r => r.eventId))];
       const paymentStatus = driver.registrations[0]?.paymentStatus || 'PENDING';
 
-      return {
-        id: driver.id.substring(0, 5).toUpperCase(), // ตัด ID ให้สั้นๆ เท่ๆ
+return {
+        id: driver.id.substring(0, 5).toUpperCase(),
         rawId: driver.id,
         rawBirthDate: driver.birthDate,
         name: `${driver.firstName} ${driver.lastName}`,
+        // 🚩 แนบข้อมูลใหม่ไปให้หน้าบ้านด้วย
+        nickname: driver.nickname,
+        nationality: driver.nationality,
+        licenseNo: driver.licenseNo,
+        shirtSize: driver.shirtSize,
+        bloodType: driver.bloodType,
+        mobileNo: driver.mobileNo,
+        guardianName: driver.guardianName,
+        guardianId: driver.guardianId,
+        guardianNationality: driver.guardianNationality,
+        guardianMobile: driver.guardianMobile,
+        // ---------------------------------
         category: primaryClass,
         crossEntry: crossEntry,
         events: events,
         payment: paymentStatus,
       };
-    });
 
     return NextResponse.json({ data: formattedData });
   } catch (error) {
