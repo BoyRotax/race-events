@@ -28,19 +28,17 @@ if (res?.error) {
       setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
       setLoading(false);
     } else {
-      // 🚩 2. ล็อกอินผ่านแล้ว! ดึง Session ล่าสุด
       const session = await getSession();
       const role = (session?.user as any)?.role;
 
-      // 🚀 3. ระบบวาร์ปของจริง (ใช้ window.location.href แทน router.push เพื่อบังคับรีเฟรช)
+      // 🚀 บังคับวาร์ปแบบ Hard Redirect (แก้ปัญหาจำหน้าจอเก่า)
       if (role === "ADMIN") {
         window.location.href = "/admin";
-      } else if (role === "VIP") {
-        window.location.href = "/vip";
       } else {
-        window.location.href = "/dashboard";
+        // 🚩 ทั้ง VIP และ USER ธรรมดา ให้พุ่งไปหน้า Garage (ข้อมูลส่วนตัว/ทีม) ก่อนเลย!
+        window.location.href = "/vip";
       }
-    };
+    }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col justify-center items-center p-4">
