@@ -5,7 +5,6 @@ const prisma = new PrismaClient();
 
 export async function GET(request: Request) {
   try {
-    // 🚩 ชั่วคราว: ดึงข้อมูลของทีม PT Creative ก่อน (เดี๋ยวตอนทำ Session ค่อยมาผูก ID จริง)
     const vipUser = await prisma.user.findUnique({
       where: { email: 'vip@ptcreative.com' }
     });
@@ -20,11 +19,10 @@ export async function GET(request: Request) {
         registrations: {
           include: { event: true }
         } 
-      },
-      orderBy: { createdAt: 'desc' }
+      }
+      // 🚩 เอา orderBy ออกเช่นกันครับ
     });
 
-    // จัดระเบียบข้อมูลส่งให้หน้าบ้าน
     const formattedData = drivers.map(driver => {
       const primaryClass = driver.registrations[0]?.category || 'Unknown';
       const crossEntry = driver.registrations[0]?.crossEntry || null;

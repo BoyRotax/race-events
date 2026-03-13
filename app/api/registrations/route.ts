@@ -5,17 +5,16 @@ const prisma = new PrismaClient();
 
 export async function GET() {
   try {
-    // ดึงข้อมูลนักแข่งทั้งหมด พร้อมข้อมูลทีม (User) และรายการที่ลงแข่ง (Registration)
     const drivers = await prisma.driver.findMany({
       include: {
-        user: true, // ดึงข้อมูลทีมมาด้วย (เพราะเราเปลี่ยนมาใช้ name แล้ว)
+        user: true, 
         registrations: {
           include: {
-            event: true // ดึงข้อมูลสนามมาด้วย
+            event: true 
           }
         }
-      },
-      orderBy: { createdAt: 'desc' } // เรียงจากสมัครล่าสุด
+      }
+      // 🚩 เอา orderBy: createdAt ออกไปแล้วครับ เพื่อให้ Build ผ่าน
     });
 
     return NextResponse.json({ data: drivers });
