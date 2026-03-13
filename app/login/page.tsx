@@ -38,7 +38,7 @@ if (res?.error) {
         // 🚩 ทั้ง VIP และ USER ธรรมดา ให้พุ่งไปหน้า Garage (ข้อมูลส่วนตัว/ทีม) ก่อนเลย!
         window.location.href = "/vip";
       }
-    }
+    };
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col justify-center items-center p-4">
