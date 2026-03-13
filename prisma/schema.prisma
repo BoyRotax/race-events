@@ -20,8 +20,8 @@ model User {
   email       String?   @unique
   password    String?
   name        String?  // ชื่อผู้สมัคร หรือ ชื่อทีม
-  role        String    @default(USER) // สมัครใหม่เป็น USER ธรรมดาเสมอ
-  drivers     Driver[]
+  role        Role    @default(USER) // สมัครใหม่เป็น USER ธรรมดาเสมอ
+ 
   createdAt   DateTime @default(now())
   drivers     Driver[] // User 1 คน มีนักแข่งในการดูแลได้ (ถ้าเป็น VIP จะมีหลายคน)
 }
