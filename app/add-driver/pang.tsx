@@ -58,7 +58,7 @@ export default function AddDriverPage() {
         
         <div className="flex justify-between items-end mb-8 border-b border-gray-800 pb-4">
           <div>
-            <Link href="/vip" className="text-[#cba052] hover:text-white text-sm font-bold transition mb-2 inline-block">
+            <Link href="/vip" className="text-[#E43138] hover:text-white text-sm font-bold transition mb-2 inline-block">
               <i className="fas fa-arrow-left mr-2"></i> BACK TO GARAGE
             </Link>
             <h2 className="text-3xl font-black uppercase tracking-tight">Create <span className="text-[#E43138]">Driver Profile</span></h2>
@@ -99,7 +99,7 @@ export default function AddDriverPage() {
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-500 uppercase">Blood Type</label>
                 <select className="w-full p-3 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white" value={formData.bloodType} onChange={(e) => setFormData({...formData, bloodType: e.target.value})}>
-                  <option value="">Select...</option><option value="A Rh+">A Rh+</option><option value="B Rh+">B Rh+</option><option value="O Rh+">O Rh+</option><option value="AB Rh+">AB Rh+</option>
+                  <option value="">Select...</option><option value="A Rh+">A Rh+</option><option value="A Rh-">A Rh-</option><option value="B Rh+">B Rh+</option><option value="B Rh-">B Rh-</option><option value="O Rh+">O Rh+</option><option value="O Rh-">O Rh-</option><option value="AB Rh+">AB Rh+</option><option value="AB Rh-">AB Rh-</option>
                 </select>
               </div>
               <div className="space-y-1">
@@ -114,7 +114,6 @@ export default function AddDriverPage() {
               </div>
             </div>
 
-            {/* อัปโหลดรูปใบขับแข่ง */}
             <div className="mt-5 p-4 bg-black/50 border border-gray-800 rounded-lg">
               <label className="text-xs font-bold text-[#cba052] uppercase mb-2 block"><i className="fas fa-id-badge mr-2"></i>Racing License Photo</label>
               <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-[#E43138] file:text-white hover:file:bg-red-700 cursor-pointer" />
@@ -151,7 +150,6 @@ export default function AddDriverPage() {
             </div>
           </div>
 
-          {/* ปุ่มบันทึก */}
           <div className="bg-black p-6 rounded-xl border border-gray-800 flex justify-end shadow-2xl sticky bottom-8 z-40">
             <button type="submit" disabled={loading} className="w-full md:w-auto px-10 py-4 font-black tracking-widest text-white bg-[#E43138] rounded-lg hover:bg-red-700 transition disabled:opacity-50 shadow-[0_0_20px_rgba(228,49,56,0.3)]">
               {loading ? 'SAVING PROFILE...' : 'SAVE DRIVER PROFILE'} <i className="fas fa-save ml-2"></i>
