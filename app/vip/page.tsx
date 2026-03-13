@@ -9,11 +9,8 @@ export default function VipDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (status === "authenticated") {
-      fetchTeamData();
-    } else if (status === "unauthenticated") {
-      setLoading(false);
-    }
+    if (status === "authenticated") fetchTeamData();
+    else if (status === "unauthenticated") setLoading(false);
   }, [status]);
 
   const fetchTeamData = async () => {
@@ -34,98 +31,103 @@ export default function VipDashboard() {
     return <div className="min-h-screen bg-[#111111] flex justify-center items-center text-[#cba052] font-black text-2xl tracking-widest"><i className="fas fa-spinner fa-spin mr-3"></i> LOADING GARAGE...</div>;
   }
 
-  if (!session) {
-    return (
-      <div className="min-h-screen bg-[#111111] flex flex-col justify-center items-center text-white">
-        <i className="fas fa-lock text-6xl text-[#E43138] mb-4"></i>
-        <h2 className="text-2xl font-black uppercase mb-4">Access Denied</h2>
-        <p className="text-gray-400 mb-6">กรุณาเข้าสู่ระบบเพื่อดูข้อมูลทีม</p>
-        <Link href="/login" className="bg-[#E43138] px-6 py-3 rounded font-bold hover:bg-red-700 transition">GO TO LOGIN</Link>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#111111] text-white p-4 md:p-8 font-sans pb-20">
-      <div className="max-w-6xl mx-auto mt-4">
+      <div className="max-w-7xl mx-auto mt-4">
         
-        {/* 🏁 Header Section */}
+        {/* 🏁 Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-gray-800 pb-6">
           <div>
             <div className="text-[#cba052] font-black text-xs tracking-widest uppercase mb-1">Team Management Portal</div>
             <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight">
-              {session.user?.name} <span className="text-gray-600">GARAGE</span>
+              {session?.user?.name} <span className="text-gray-600">GARAGE</span>
             </h1>
           </div>
           <Link href="/dashboard" className="mt-4 md:mt-0 bg-[#E43138] hover:bg-red-700 text-white px-6 py-3 rounded-lg font-black tracking-widest transition shadow-[0_0_15px_rgba(228,49,56,0.3)] flex items-center">
-            <i className="fas fa-plus-circle mr-2"></i> ADD NEW DRIVER
+            <i className="fas fa-plus-circle mr-2"></i> REGISTER NEW DRIVER
           </Link>
         </div>
 
-        {/* 📊 Stats Section */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-[#1a1a1a] p-5 rounded-xl border border-gray-800 border-t-4 border-t-[#cba052]">
-            <p className="text-gray-500 text-xs font-bold uppercase mb-1">Total Drivers</p>
-            <p className="text-3xl font-black">{drivers.length}</p>
+        {/* 📋 โซนการ์ดนักแข่ง (Driver Cards) */}
+        {drivers.length === 0 ? (
+          <div className="bg-[#1a1a1a] p-10 rounded-xl border border-gray-800 text-center">
+            <i className="fas fa-car-crash text-4xl text-gray-600 mb-4"></i>
+            <h3 className="text-xl font-bold text-gray-400 uppercase">Garage is empty</h3>
+            <p className="text-gray-600">ยังไม่มีนักแข่งในทีม กดปุ่มเพิ่มนักแข่งเพื่อเริ่มต้น</p>
           </div>
-          <div className="bg-[#1a1a1a] p-5 rounded-xl border border-gray-800 border-t-4 border-t-[#E43138]">
-            <p className="text-gray-500 text-xs font-bold uppercase mb-1">Pending Payments</p>
-            <p className="text-3xl font-black">{drivers.filter(d => d.payment === 'PENDING').length}</p>
-          </div>
-        </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {drivers.map((driver) => (
+              <div key={driver.id} className="bg-[#1a1a1a] border border-gray-800 rounded-xl overflow-hidden shadow-2xl relative group hover:border-[#cba052] transition-colors">
+                
+                {/* แถบสีด้านบนบอกสถานะการจ่ายเงิน */}
+                <div className={`h-2 w-full ${driver.payment === 'PAID' ? 'bg-green-500' : 'bg-[#E43138]'}`}></div>
 
-        {/* 📋 Driver Table List */}
-        <div className="bg-[#1a1a1a] rounded-xl border border-gray-800 overflow-hidden shadow-2xl">
-          <div className="p-5 border-b border-gray-800 bg-black flex justify-between items-center">
-            <h3 className="font-bold text-[#cba052] uppercase tracking-wider"><i className="fas fa-users mr-2"></i> Registered Drivers</h3>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead>
-                <tr className="bg-[#111111] text-xs uppercase tracking-wider text-gray-500 border-b border-gray-800">
-                  <th className="p-4 font-black">Driver Name</th>
-                  <th className="p-4 font-black">Class (Category)</th>
-                  <th className="p-4 font-black">Registered Events</th>
-                  <th className="p-4 font-black text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800">
-                {drivers.length === 0 ? (
-                  <tr><td colSpan={4} className="p-10 text-center text-gray-600 font-bold uppercase">No drivers found. Start registering!</td></tr>
-                ) : drivers.map((driver) => (
-                  <tr key={driver.id} className="hover:bg-black transition group">
-                    <td className="p-4">
-                      <div className="font-bold text-white text-base">{driver.name}</div>
-                      <div className="text-xs text-gray-600 font-mono">ID: {driver.id}</div>
-                    </td>
-                    <td className="p-4">
-                      <span className="bg-gray-800 text-gray-200 px-2 py-1 rounded text-xs font-bold border border-gray-600">{driver.category}</span>
-                      {driver.crossEntry && (
-                        <span className="ml-2 bg-yellow-900/30 text-[#cba052] px-2 py-1 rounded text-xs font-bold border border-[#cba052]/50">+ {driver.crossEntry}</span>
+                <div className="p-5">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-4">
+                      {/* รูปใบขับแข่ง / อวตาร */}
+                      {driver.licenseImageUrl ? (
+                        <img src={driver.licenseImageUrl} alt="License" className="w-16 h-16 rounded-full object-cover border-2 border-[#E43138]" />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full bg-black border-2 border-gray-700 flex items-center justify-center text-gray-600 text-2xl">
+                          <i className="fas fa-user-astronaut"></i>
+                        </div>
                       )}
-                    </td>
-                    <td className="p-4">
-                      <div className="flex flex-wrap gap-1">
-                        {driver.events.map((ev: string) => (
-                          <span key={ev} className="bg-[#E43138]/20 text-[#E43138] px-1.5 py-0.5 rounded text-[10px] font-black tracking-widest uppercase border border-[#E43138]/30">
-                            {ev}
-                          </span>
-                        ))}
+                      
+                      <div>
+                        <h4 className="font-black text-xl text-white uppercase leading-tight">{driver.name}</h4>
+                        <p className="text-[#cba052] text-sm font-bold uppercase">{driver.nickname ? `"${driver.nickname}"` : 'NO NICKNAME'} <span className="text-gray-600 mx-1">|</span> {driver.nationality || 'N/A'}</p>
                       </div>
-                    </td>
-                    <td className="p-4 text-right">
-                      <span className={`px-3 py-1 rounded text-[10px] font-black tracking-widest uppercase
-                        ${driver.payment === 'PAID' ? 'bg-green-900/50 text-green-400 border border-green-700' : 'bg-red-900/50 text-red-400 border border-red-700'}`}>
-                        {driver.payment}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                    
+                    {/* เบอร์รถตัวใหญ่เบิ้ม! */}
+                    <div className="bg-black border border-gray-800 text-white w-12 h-12 rounded-lg flex items-center justify-center font-black text-2xl shadow-inner">
+                      {driver.racingNumber}
+                    </div>
+                  </div>
+
+                  {/* รุ่นการแข่งขัน */}
+                  <div className="mb-4 bg-black p-3 rounded border border-gray-800 flex justify-between items-center">
+                    <div>
+                      <p className="text-xs text-gray-500 font-bold uppercase mb-1">Class</p>
+                      <p className="font-black text-white">{driver.category}</p>
+                    </div>
+                    {driver.crossEntry && (
+                      <div className="text-right">
+                        <p className="text-xs text-yellow-600 font-bold uppercase mb-1">Cross Entry</p>
+                        <p className="font-black text-[#cba052]">{driver.crossEntry}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ข้อมูลอื่นๆ */}
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="bg-black/50 p-2 rounded border border-gray-800">
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Shirt Size</p>
+                      <p className="font-bold text-gray-300">{driver.shirtSize || '-'}</p>
+                    </div>
+                    <div className="bg-black/50 p-2 rounded border border-gray-800">
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Blood Type</p>
+                      <p className="font-bold text-gray-300">{driver.bloodType || '-'}</p>
+                    </div>
+                  </div>
+
+                  {/* รายการสนาม */}
+                  <div className="mt-4 pt-4 border-t border-gray-800">
+                    <p className="text-[10px] text-gray-500 uppercase font-bold mb-2">Registered Events</p>
+                    <div className="flex flex-wrap gap-1">
+                      {driver.events.map((ev: string) => (
+                        <span key={ev} className="bg-gray-800 text-gray-300 px-2 py-1 rounded text-[10px] font-mono uppercase border border-gray-700">{ev}</span>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+        )}
 
       </div>
     </div>

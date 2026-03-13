@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
       const crossEntry = driver.registrations[0]?.crossEntry || null;
       const events = [...new Set(driver.registrations.map(r => r.eventId))];
       const paymentStatus = driver.registrations[0]?.paymentStatus || 'PENDING';
+      const racingNumber = driver.registrations[0]?.racingNumber || '-';
 
       return {
         id: driver.id.substring(0, 5).toUpperCase(),
@@ -51,6 +52,7 @@ export async function GET(request: NextRequest) {
         crossEntry: crossEntry,
         events: events,
         payment: paymentStatus,
+        racingNumber: racingNumber,
       };
     }); // <--- จุดที่วงเล็บมักจะหายไปคือตรงนี้ครับ!
 
