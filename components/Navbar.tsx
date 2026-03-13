@@ -17,6 +17,14 @@ export default function Navbar() {
             <span className="text-gray-500 text-sm font-bold">LOADING...</span>
           ) : session?.user ? (
             <>
+              {/* 🚩 ปุ่มใหม่! สำหรับกดไปหน้าเลือกสนาม (Dashboard) */}
+              <Link href="/dashboard" className="bg-[#E43138] text-white px-4 py-1.5 rounded text-xs font-black tracking-widest hover:bg-red-700 transition shadow-[0_0_10px_rgba(228,49,56,0.3)]">
+                <i className="fas fa-flag-checkered mr-1"></i> SELECT EVENT
+              </Link>
+
+              {/* เส้นคั่น */}
+              <div className="hidden md:block w-px h-8 bg-gray-700 mx-2"></div>
+
               {/* แถบโชว์ชื่อและยศ */}
               <div className="flex items-center gap-3">
                 <div className="text-right hidden md:block">
@@ -29,7 +37,7 @@ export default function Navbar() {
                   </div>
                 </div>
                 
-                {/* เมนูตาม Role */}
+                {/* ปุ่มเข้าหน้า Admin (โชว์เฉพาะคนที่เป็น ADMIN) */}
                 {(session.user as any).role === "ADMIN" && (
                   <Link href="/admin" className="bg-purple-900/50 text-purple-300 px-3 py-1.5 rounded border border-purple-700 text-xs font-bold hover:bg-purple-800 transition">
                     <i className="fas fa-cog mr-1"></i> ADMIN
