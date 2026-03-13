@@ -24,26 +24,23 @@ export default function LoginPage() {
       password,
     });
 
-    if (res?.error) {
+if (res?.error) {
       setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
       setLoading(false);
     } else {
-      // 🚩 2. ล็อกอินผ่านแล้ว! ขอแอบดูหน่อยว่ายศอะไร?
+      // 🚩 2. ล็อกอินผ่านแล้ว! ดึง Session ล่าสุด
       const session = await getSession();
       const role = (session?.user as any)?.role;
 
-      // 🚩 3. ระบบต้อนรับ (แยกทางเดินตามยศ)
+      // 🚀 3. ระบบวาร์ปของจริง (ใช้ window.location.href แทน router.push เพื่อบังคับรีเฟรช)
       if (role === "ADMIN") {
-        router.push("/admin");       // แอดมิน ไปหน้าหลังบ้าน
+        window.location.href = "/admin";
       } else if (role === "VIP") {
-        router.push("/vip");         // ทีมแข่งใหญ่ ไปหน้า Garage ดูลูกทีม
+        window.location.href = "/vip";
       } else {
-        router.push("/dashboard");   // นักแข่งอิสระ (USER) ไปหน้าเลือกสนามแข่ง
+        window.location.href = "/dashboard";
       }
-      
-      router.refresh();
-    }
-  };
+    };
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col justify-center items-center p-4">
