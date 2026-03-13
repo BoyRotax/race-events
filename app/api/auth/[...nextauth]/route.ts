@@ -16,29 +16,48 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        console.log("🟡 1. มีคนพยายาม Login ด้วยอีเมล:", credentials?.email);
+        
+        if (!credentials?.email || !credentials?.password) {
+          console.log("🔴 2. อีเมลหรือรหัสผ่านว่างเปล่า");
+          return null;
+        }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        });
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email }
+          });
 
-        if (!user || !user.password) return null;
+          console.log("🟡 3. ค้นหาใน DB เจอไหม?:", user ? "เจอ!" : "ไม่เจอ!");
 
-        const isPasswordCorrect = await bcrypt.compare(credentials.password, user.password);
-        if (!isPasswordCorrect) return null;
+          if (!user || !user.password) {
+            console.log("🔴 4. ไม่มี User นี้ในระบบ หรือ User ไม่มีรหัสผ่าน");
+            return null;
+          }
 
-        // 🚩 โหลดข้อมูล Role ติดไปด้วย
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role, 
-        };
+          const isPasswordCorrect = await bcrypt.compare(credentials.password, user.password);
+          console.log("🟡 5. รหัสผ่านตรงไหม?:", isPasswordCorrect);
+
+          if (!isPasswordCorrect) {
+            console.log("🔴 6. รหัสผ่านผิด!");
+            return null;
+          }
+
+          console.log("🟢 7. Login สำเร็จ! กำลังส่งข้อมูลเข้าระบบ");
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role, 
+          };
+        } catch (error) {
+          console.error("💥 ERROR ร้ายแรงตอน LOGIN:", error);
+          return null;
+        }
       }
     })
   ],
   callbacks: {
-    // 🚩 ฝัง Role ลงใน Token
     async jwt({ token, user }) {
       if (user) {
         token.role = (user as any).role;
@@ -46,7 +65,6 @@ const handler = NextAuth({
       }
       return token;
     },
-    // 🚩 ส่ง Role ไปให้หน้าเว็บใช้งาน
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).role = token.role;
