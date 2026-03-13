@@ -73,6 +73,7 @@ model Registration {
   crossEntry    String?  // รุ่นควบ เช่น Micro Rookie
   racingNumber  Int
   paymentStatus String   @default("PENDING")
+  slipImageUrl  String?  // 🚩 เพิ่มบรรทัดนี้ลงไป! เอาไว้เก็บลิงก์รูปสลิป
   createdAt     DateTime @default(now())
 
   driver        Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)

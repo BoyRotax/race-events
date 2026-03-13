@@ -48,7 +48,18 @@ export default function VipDashboard() {
             <i className="fas fa-plus-circle mr-2"></i> REGISTER NEW DRIVER
           </Link>
         </div>
-
+{/* 🚨 แจ้งเตือนยอดค้างชำระ */}
+        {drivers.some(d => d.payment === 'PENDING' && d.events.length > 0) && (
+          <div className="mb-8 bg-red-900/20 border border-[#E43138] rounded-xl p-6 flex flex-col md:flex-row justify-between items-center shadow-[0_0_20px_rgba(228,49,56,0.1)]">
+            <div className="mb-4 md:mb-0">
+              <h3 className="text-xl font-black text-[#E43138] uppercase"><i className="fas fa-exclamation-triangle mr-2"></i> Pending Payment</h3>
+              <p className="text-gray-400 text-sm font-bold">คุณมีรายการลงแข่งที่ยังไม่ได้ชำระเงิน กรุณาชำระเงินเพื่อยืนยันสิทธิ์</p>
+            </div>
+            <Link href="/checkout" className="w-full md:w-auto px-8 py-3 bg-[#E43138] text-white font-black tracking-widest uppercase rounded hover:bg-red-700 transition text-center shadow-lg">
+              VIEW INVOICE & PAY
+            </Link>
+          </div>
+        )}
         {/* 📋 โซนการ์ดนักแข่ง (Driver Cards) */}
         {drivers.length === 0 ? (
           <div className="bg-[#1a1a1a] p-10 rounded-xl border border-gray-800 text-center">
