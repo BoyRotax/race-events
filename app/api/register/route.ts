@@ -1,27 +1,23 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { getToken } from 'next-auth/jwt'; // 🚩 นำเข้าระบบถอดรหัส Token
+import { getToken } from 'next-auth/jwt';
 
 const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
-    // 🔒 1. ด่านตรวจคนเข้าเมือง: เช็คว่า Login อยู่จริงๆ ใช่ไหม?
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
     
     if (!token || !token.id) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Unauthorized: กรุณาเข้าสู่ระบบก่อนทำรายการ' 
-      }, { status: 401 });
+      return NextResponse.json({ success: false, error: 'Unauthorized: กรุณาเข้าสู่ระบบ' }, { status: 401 });
     }
 
-    const actualUserId = token.id as string; // 🚩 ได้ ID จริงของนายมาแล้ว!
-
+    const actualUserId = token.id as string;
     const body = await request.json();
-    const { firstName, lastName, birthDate, racingNumber, events, primaryClass, crossEntry } = body;
+    
+    // 🚩 รับค่า driverId เข้ามาด้วย (ถ้ามี = คนเก่า, ถ้าไม่มี = สร้างคนใหม่)
+    const { driverId, firstName, lastName, birthDate, racingNumber, events, primaryClass, crossEntry } = body;
 
-    // 🧮 2. คำนวณรุ่นควบ (Cross-Entry)
     let secondaryClass = null;
     if (crossEntry) {
       if (primaryClass === 'Micro MAX') secondaryClass = 'Micro Rookie';
@@ -29,7 +25,6 @@ export async function POST(request: NextRequest) {
       else if (primaryClass === 'Senior MAX Masters') secondaryClass = 'Senior MAX';
     }
 
-    // 🏁 3. อัปเดตข้อมูล Event (สร้างสนามไว้รอ ป้องกัน Database Error)
     for (const eventId of events) {
       await prisma.event.upsert({
         where: { id: eventId },
@@ -45,38 +40,47 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 📦 4. เตรียมข้อมูลลงทะเบียนของแต่ละสนาม
-    const registrationsData = [];
-    for (const eventId of events) {
-      registrationsData.push({ 
-        eventId: eventId, 
-        category: primaryClass, 
-        crossEntry: secondaryClass, 
-        racingNumber: parseInt(racingNumber) 
+    const registrationsData = events.map((eventId: string) => ({
+      eventId: eventId,
+      category: primaryClass,
+      crossEntry: secondaryClass,
+      racingNumber: parseInt(racingNumber)
+    }));
+
+    let result;
+
+    if (driverId) {
+      // 🔄 กรณีเลือกนักแข่งเก่า: แค่อัปเดตข้อมูลพื้นฐานนิดหน่อย (เผื่อแก้ชื่อ) แล้วเพิ่มสนามใหม่เข้าไป
+      result = await prisma.driver.update({
+        where: { 
+          id: driverId,
+          userId: actualUserId // 🔒 ป้องกันคนแฮ็กไปแก้ข้อมูลทีมนื่น
+        },
+        data: {
+          firstName,
+          lastName,
+          birthDate: new Date(birthDate),
+          registrations: {
+            create: registrationsData
+          }
+        }
+      });
+    } else {
+      // 🆕 กรณีสร้างนักแข่งใหม่
+      result = await prisma.driver.create({
+        data: {
+          firstName,
+          lastName,
+          birthDate: new Date(birthDate),
+          userId: actualUserId,
+          registrations: {
+            create: registrationsData
+          }
+        }
       });
     }
 
-    // 💾 5. บันทึกข้อมูลนักแข่ง (Driver) และผูกกับ "ทีมที่กำลัง Login"
-    const result = await prisma.driver.create({
-      data: {
-        firstName,
-        lastName,
-        birthDate: new Date(birthDate),
-        userId: actualUserId, // <--- 🚩 หัวใจสำคัญอยู่ตรงนี้! ผูก ID จริงแล้ว!
-        registrations: {
-          create: registrationsData
-        }
-      },
-      include: {
-        registrations: true
-      }
-    });
-
-    return NextResponse.json({ 
-      success: true, 
-      message: 'ลงทะเบียนสำเร็จ!',
-      driverId: result.id 
-    });
+    return NextResponse.json({ success: true, driverId: result.id });
 
   } catch (error: any) {
     console.error("REGISTRATION ERROR:", error);
