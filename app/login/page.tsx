@@ -1,55 +1,107 @@
 "use client";
-import { signIn } from "next-auth/react";
+
 import { useState } from "react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const res = await signIn("credentials", { email, password, redirect: false });
-    
-    if (res?.ok) {
-        // 🚩 เดี๋ยวเราจะทำระบบแยกหน้าตาม Role ทีหลัง ตอนนี้ให้เด้งไปหน้าแรกก่อน
-        router.push("/"); 
-        router.refresh();
+    setError("");
+
+    // 1. ส่งข้อมูลไปเช็คกับ NextAuth
+    const res = await signIn("credentials", {
+      redirect: false,
+      email,
+      password,
+    });
+
+    if (res?.error) {
+      setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+      setLoading(false);
     } else {
-        alert("❌ อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+      // 🚩 2. ล็อกอินผ่านแล้ว! ขอแอบดูหน่อยว่ายศอะไร?
+      const session = await getSession();
+      const role = (session?.user as any)?.role;
+
+      // 🚩 3. ระบบต้อนรับ (แยกทางเดินตามยศ)
+      if (role === "ADMIN") {
+        router.push("/admin");       // แอดมิน ไปหน้าหลังบ้าน
+      } else if (role === "VIP") {
+        router.push("/vip");         // ทีมแข่งใหญ่ ไปหน้า Garage ดูลูกทีม
+      } else {
+        router.push("/dashboard");   // นักแข่งอิสระ (USER) ไปหน้าเลือกสนามแข่ง
+      }
+      
+      router.refresh();
     }
-    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#111111] bg-[url('https://www.rotax-kart.com/images/rotax-bg.jpg')] bg-cover bg-center bg-blend-overlay">
-      <form onSubmit={handleLogin} className="bg-black/80 backdrop-blur-md p-10 rounded-2xl border-t-4 border-[#cba052] w-full max-w-md shadow-[0_0_30px_rgba(203,160,82,0.15)]">
-        <h2 className="text-3xl font-black text-white mb-2 uppercase text-center tracking-tight">Portal <span className="text-[#cba052]">Login</span></h2>
-        <p className="text-gray-400 text-center text-sm mb-8">ลงชื่อเข้าใช้ระบบ Rotax Racing 2026</p>
-        
-        <div className="space-y-5">
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Email Address</label>
-            <input type="email" placeholder="example@email.com" className="w-full p-4 rounded bg-[#1a1a1a] border border-gray-800 text-white outline-none focus:border-[#cba052] transition" 
-              onChange={(e) => setEmail(e.target.value)} required />
+    <div className="min-h-screen bg-[#0a0a0a] flex flex-col justify-center items-center p-4">
+      <div className="max-w-md w-full bg-[#111] p-8 rounded-2xl border border-gray-800 shadow-2xl relative overflow-hidden">
+        {/* เส้นตกแต่งด้านบน */}
+        <div className="absolute top-0 left-0 w-full h-1 bg-[#cba052]"></div>
+
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-black text-white tracking-widest uppercase mb-1">
+            Portal <span className="text-[#cba052]">Login</span>
+          </h1>
+          <p className="text-sm text-gray-500 font-bold">ลงชื่อเข้าใช้ระบบ Rotax Racing 2026</p>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-900/30 border border-red-900/50 rounded text-red-500 text-sm font-bold text-center">
+            <i className="fas fa-exclamation-circle mr-2"></i> {error}
           </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Password</label>
-            <input type="password" placeholder="••••••••" className="w-full p-4 rounded bg-[#1a1a1a] border border-gray-800 text-white outline-none focus:border-[#cba052] transition" 
-              onChange={(e) => setPassword(e.target.value)} required />
+            <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Email Address</label>
+            <input 
+              type="email" 
+              className="w-full p-4 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white transition"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </div>
-          <button disabled={loading} className="w-full bg-[#cba052] text-black p-4 rounded-lg font-black tracking-widest hover:bg-yellow-600 transition mt-4 disabled:opacity-50">
-            {loading ? "AUTHENTICATING..." : "SIGN IN"}
+
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Password</label>
+            <input 
+              type="password" 
+              className="w-full p-4 bg-black border border-gray-800 rounded outline-none focus:border-[#cba052] text-white transition"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full py-4 mt-4 bg-[#cba052] text-black font-black uppercase tracking-widest rounded hover:bg-[#b08d44] transition disabled:opacity-50"
+          >
+            {loading ? "AUTHENTICATING..." : "LOGIN TO PORTAL"}
           </button>
+        </form>
+
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-500 font-bold">
+            ยังไม่มีบัญชี? <Link href="/register" className="text-white hover:text-[#cba052] transition underline">สร้างบัญชีใหม่</Link>
+          </p>
         </div>
-        <div className="mt-6 text-center text-sm text-gray-500 font-bold">
-          ยังไม่มีบัญชี? <Link href="/register" className="text-white hover:text-[#cba052] transition underline">สร้างบัญชีใหม่</Link>
-        </div>
-      </form>
+      </div>
     </div>
   );
 }
