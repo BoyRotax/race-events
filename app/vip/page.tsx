@@ -128,7 +128,24 @@ export default function VipDashboard() {
                       <p className="font-bold text-gray-300">{driver.bloodType || '-'}</p>
                     </div>
                   </div>
-
+{/* 🛠️ Action Buttons (ลงแข่ง & แก้ไข) */}
+<div className="mt-6 flex flex-col md:flex-row gap-2 border-t border-gray-800/50 pt-4">
+  {/* ปุ่มแดง: พุ่งไปหน้าเลือกลงสนาม พร้อมส่ง ID ไปด้วย */}
+  <Link 
+    href={`/participant?driverId=${driver.rawId}`} 
+    className="flex-1 text-center bg-[#E43138] hover:bg-red-700 text-white text-xs font-black uppercase tracking-widest py-2 rounded transition"
+  >
+    <i className="fas fa-flag-checkered mr-2"></i> Register Event
+  </Link>
+  
+  {/* ปุ่มเทา: ไปหน้าแก้ไขประวัติ */}
+  <Link 
+    href={`/edit-driver/${driver.rawId}`} 
+    className="flex-1 text-center bg-gray-800 hover:bg-gray-700 text-white text-xs font-bold uppercase tracking-widest py-2 rounded transition"
+  >
+    <i className="fas fa-user-edit mr-2"></i> Edit Profile
+  </Link>
+</div>
                   {/* รายการสนาม */}
                   <div className="mt-4 pt-4 border-t border-gray-800">
                     <p className="text-[10px] text-gray-500 uppercase font-bold mb-2">Registered Events</p>

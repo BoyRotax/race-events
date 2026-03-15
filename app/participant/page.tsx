@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 const ENTRY_FEES: Record<string, number> = {
   'Micro MAX': 21000,
@@ -19,7 +20,9 @@ const formatTHB = (amount: number) => {
 
 function RegistrationForm() {
   const searchParams = useSearchParams();
+  const preSelectedDriverId = searchParams.get('driverId');
   const router = useRouter();
+  
 
   const [formData, setFormData] = useState({
     driverId: '', firstName: '', lastName: '', birthDate: '', nickname: '', 
@@ -34,7 +37,28 @@ function RegistrationForm() {
   const [teamDrivers, setTeamDrivers] = useState<any[]>([]);
   const [fetchingDrivers, setFetchingDrivers] = useState(true);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  
+// เมื่อโหลดรายชื่อเสร็จ ให้เช็คว่ามีการส่ง driverId มาจากหน้า VIP หรือไม่
+useEffect(() => {
+  if (drivers.length > 0 && preSelectedDriverId) {
+    const preSelected = drivers.find(d => d.rawId === preSelectedDriverId);
+    if (preSelected) {
+      handleDriverSelect(preSelected);
+    }
+  }
+}, [drivers, preSelectedDriverId]);
 
+// ฟังก์ชันสำหรับเซ็ตค่าต่างๆ อัตโนมัติ
+const handleDriverSelect = (driver: any) => {
+  setSelectedDriver(driver.rawId);
+  // ดึง Category และ เบอร์รถ เดิมมาใส่ให้อัตโนมัติ!
+  if (driver.category && driver.category !== 'Unknown') {
+    setPrimaryClass(driver.category);
+  }
+  if (driver.racingNumber && driver.racingNumber !== '-') {
+    setRacingNumber(driver.racingNumber);
+  }
+};
   useEffect(() => {
     const eventsParam = searchParams.get('events');
     if (eventsParam) setSelectedEvents(eventsParam.split(','));
