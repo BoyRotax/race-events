@@ -74,7 +74,6 @@ function RegistrationForm() {
       nationality: driver.nationality || '', 
       licenseNo: driver.licenseNo || '',
       licenseImageUrl: driver.licenseImageUrl || '', 
-      shirtSize: driver.shirtSize || '',
       bloodType: driver.bloodType || '', 
       mobileNo: driver.mobileNo || '',
       guardianName: driver.guardianName || '', 
@@ -225,7 +224,7 @@ function RegistrationForm() {
           <select className="p-3 bg-black border border-gray-800 rounded focus:border-[#cba052] text-white disabled:opacity-50" value={formData.bloodType} onChange={(e) => setFormData({...formData, bloodType: e.target.value})} disabled={!!formData.driverId && !isEditingProfile}>
             <option value="">Blood Type</option><option value="A Rh+">A Rh+</option><option value="B Rh+">B Rh+</option><option value="O Rh+">O Rh+</option><option value="AB Rh+">AB Rh+</option>
           </select>
-          <select className="p-3 bg-black border border-gray-800 rounded focus:border-[#cba052] text-white disabled:opacity-50" value={formData.shirtSize} onChange={(e) => setFormData({...formData, shirtSize: e.target.value})} disabled={!!formData.driverId && !isEditingProfile}>
+          <select className="p-3 bg-black border border-gray-800 rounded focus:border-[#cba052] text-white disabled:opacity-50" value={formData.shirtSize} onChange={(e) => setFormData({...formData, shirtSize: e.target.value})} required={!!formData.driverId && !isEditingProfile}>
             <option value="">Shirt Size</option><option value="XS">XS</option><option value="S">S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option>
           </select>
           <input type="text" placeholder="Mobile No." className="p-3 bg-black border border-gray-800 rounded focus:border-[#cba052] text-white disabled:opacity-50" value={formData.mobileNo} onChange={(e) => setFormData({...formData, mobileNo: e.target.value})} disabled={!!formData.driverId && !isEditingProfile} />

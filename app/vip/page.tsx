@@ -27,7 +27,28 @@ export default function VipDashboard() {
       setLoading(false);
     }
   };
-
+const handleCancelRegistration = async (driverId: string, eventId: string) => {
+    if (!confirm(`แน่ใจหรือไม่ว่าต้องการยกเลิกการลงสมัครสนาม ${eventId}?`)) return;
+    
+    try {
+      const res = await fetch('/api/cancel-registration', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ driverId, eventId })
+      });
+      
+      if (res.ok) {
+        alert('✅ ยกเลิกการลงทะเบียนสำเร็จ!');
+        // สั่งให้โหลดข้อมูลหน้า VIP ใหม่
+        window.location.reload(); 
+      } else {
+        const data = await res.json();
+        alert(`❌ ยกเลิกไม่ได้: ${data.error}`);
+      }
+    } catch (err) {
+      alert('เกิดข้อผิดพลาด');
+    }
+  };
   if (status === "loading" || loading) {
     return <div className="min-h-screen bg-[#111111] flex justify-center items-center text-[#cba052] font-black text-2xl tracking-widest"><i className="fas fa-spinner fa-spin mr-3"></i> LOADING GARAGE...</div>;
   }
@@ -147,14 +168,21 @@ export default function VipDashboard() {
   </Link>
 </div>
                   {/* รายการสนาม */}
-                  <div className="mt-4 pt-4 border-t border-gray-800">
-                    <p className="text-[10px] text-gray-500 uppercase font-bold mb-2">Registered Events</p>
-                    <div className="flex flex-wrap gap-1">
-                      {driver.events.map((ev: string) => (
-                        <span key={ev} className="bg-gray-800 text-gray-300 px-2 py-1 rounded text-[10px] font-mono uppercase border border-gray-700">{ev}</span>
-                      ))}
-                    </div>
-                  </div>
+                  <div className="flex flex-wrap gap-2">
+  {driver.events.map((ev: string, i: number) => (
+    <div key={i} className="flex items-center bg-blue-900/30 text-blue-400 text-xs font-bold px-3 py-1 rounded border border-blue-800/50">
+      {ev}
+      {/* 🚩 ปุ่มกากบาทยกเลิก */}
+      <button 
+        onClick={() => handleCancelRegistration(driver.rawId, ev)}
+        className="ml-2 text-red-500 hover:text-red-300 transition"
+        title="ยกเลิกการลงแข่งสนามนี้"
+      >
+        <i className="fas fa-times"></i>
+      </button>
+    </div>
+  ))}
+</div>
 
                 </div>
               </div>

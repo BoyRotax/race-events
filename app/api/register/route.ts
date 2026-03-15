@@ -33,7 +33,11 @@ export async function POST(request: NextRequest) {
       });
       finalDriverId = newDriver.id;
     }
-
+    // 🚩 อัปเดตไซส์เสื้อใหม่ล่าสุดของนักแข่งคนนี้ลง Database เสมอ
+await prisma.driver.update({
+      where: { id: finalDriverId },
+      data: { shirtSize: shirtSize }
+    });
     // 2. ลบ prisma.event ทิ้งไปเลย! แล้วมาเซฟลงตาราง Registration (ใบสมัคร) โดยตรง
     for (const eventId of events) {
       await prisma.registration.create({
