@@ -3,87 +3,50 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql" // หรือ mysql ตามที่นายใช้ใน .env
   url      = env("DATABASE_URL")
 }
 
-// 🚩 สร้างยศให้ระบบ
-enum Role {
-  USER
-  VIP
-  STAFF
-  ADMIN
-}
-
 model User {
-  id          String   @id @default(cuid())
-  email       String?   @unique
-  password    String?
-  name        String?  // ชื่อผู้สมัคร หรือ ชื่อทีม
-  role        Role    @default(USER) // สมัครใหม่เป็น USER ธรรมดาเสมอ
- 
-  createdAt   DateTime @default(now())
-  drivers     Driver[] // User 1 คน มีนักแข่งในการดูแลได้ (ถ้าเป็น VIP จะมีหลายคน)
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  password  String
+  role      String   @default("USER")
+  drivers   Driver[]
+  createdAt DateTime @default(now())
 }
 
 model Driver {
-  id            String   @id @default(cuid())
-  firstName     String
-  lastName      String
-  birthDate     DateTime
-  
-  // 🚩 --- ข้อมูลนักแข่งเพิ่มเติม (RMCAT) ---
-  nickname      String?
-  nationality   String?
-  licenseNo     String?
-  licenseImageUrl String? @db.Text
-  shirtSize     String?
-  bloodType     String?
-  mobileNo      String?
-  
-  // 🚩 --- ข้อมูลผู้ปกครอง (กรณีอายุไม่ถึง 18) ---
-  guardianName        String?
-  guardianId          String?  // NRIC/FIN/Passport/ID
+  id                String         @id @default(cuid())
+  firstName         String
+  lastName          String
+  nickname          String?
+  birthDate         DateTime
+  nationality       String?
+  licenseNo         String?
+  licenseImageUrl   String?        @db.Text
+  bloodType         String?
+  shirtSize         String?
+  mobileNo          String?
+  guardianName      String?
+  guardianId        String?
   guardianNationality String?
-  guardianMobile      String?
-
-  userId        String
-  user          User     @relation(fields: [userId], references: [id])
-  
-  registrations Registration[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
-}
-
-model Event {
-  id             String   @id
-  name           String
-  location       String
-  startDate      DateTime
-  endDate        DateTime
-  isDoubleHeader Boolean  @default(false) // 🚩 ระบุว่าเป็นสนามควบ TH+ASIA หรือไม่
-  registrations  Registration[]
+  guardianMobile    String?
+  user              User           @relation(fields: [userId], references: [id])
+  userId            String
+  registrations     Registration[]
+  createdAt         DateTime       @default(now())
 }
 
 model Registration {
   id            String   @id @default(cuid())
+  driver        Driver   @relation(fields: [driverId], references: [id])
   driverId      String
-  eventId       String
-  category      String   // รุ่นหลัก เช่น Micro MAX
-  crossEntry    String?  // รุ่นควบ เช่น Micro Rookie
-  racingNumber  Int
+  eventId       String   // เช่น TH-R1
+  category      String   // เช่น Micro MAX
+  racingNumber  String
   paymentStatus String   @default("PENDING")
-  slipImageUrl  String?  // 🚩 เพิ่มบรรทัดนี้ลงไป! เอาไว้เก็บลิงก์รูปสลิป
+  slipImageUrl  String?  @db.Text
   createdAt     DateTime @default(now())
-
-  driver        Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
-  event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-}
-
-// 🚩 ตารางใหม่ สำหรับให้ Admin แก้ข้อความหน้าเว็บ
-model SiteSetting {
-  id          String   @id @default(cuid())
-  key         String   @unique // เช่น "WELCOME_TITLE", "ANNOUNCEMENT"
-  value       String   // ข้อความที่จะโชว์
-  updatedAt   DateTime @updatedAt
 }
