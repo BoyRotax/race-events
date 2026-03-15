@@ -20,7 +20,7 @@ export default function AdminRegistrationsPage() {
   const fetchRegistrations = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/registrations");
+      const res = await fetch("/api/admin/users/registrations");
       if (res.ok) {
         const json = await res.json();
         setRegistrations(json.data || []);
