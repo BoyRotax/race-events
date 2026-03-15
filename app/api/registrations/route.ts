@@ -7,14 +7,10 @@ export async function GET() {
   try {
     const drivers = await prisma.driver.findMany({
       include: {
-        user: true, 
-        registrations: {
-          include: {
-            event: true 
-          }
-        }
-      }
-      // 🚩 เอา orderBy: createdAt ออกไปแล้วครับ เพื่อให้ Build ผ่าน
+        user: { select: { name: true, email: true } }, 
+        registrations: true // 🚩 แก้บรรทัดนี้! เปลี่ยนให้เป็นแค่ true พอครับ (ไม่ต้อง include event)
+      },
+      orderBy: { createdAt: 'desc' } 
     });
 
     return NextResponse.json({ data: drivers });
