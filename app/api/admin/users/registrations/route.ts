@@ -13,12 +13,12 @@ export async function GET(request: NextRequest) {
     }
 
     // 2. ดึงข้อมูลนักแข่งทุกคน พร้อมข้อมูลการลงทะเบียนและชื่อทีม(User)
-    const drivers = await prisma.driver.findMany({
+   const drivers = await prisma.driver.findMany({
       include: {
-        user: { select: { name: true, email: true } }, // ดึงชื่อทีมที่สังกัดมาด้วย
-        registrations: { include: { event: true } }    // ดึงข้อมูลสนามที่ลงแข่ง
+        user: { select: { name: true, email: true } }, 
+        registrations: true // 🚩 แก้ตรงนี้! ลบปีกกาข้างในทิ้งให้เหลือแค่ true ครับ
       },
-      orderBy: { createdAt: 'desc' } // เรียงจากสมัครล่าสุดขึ้นก่อน
+      orderBy: { createdAt: 'desc' }
     });
 
 // 3. กรองเอาเฉพาะคนที่ "ลงสนามแล้ว"
