@@ -7,81 +7,50 @@ const prisma = new PrismaClient();
 export async function POST(request: NextRequest) {
   try {
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-    if (!token || !token.id) {
-      return NextResponse.json({ success: false, error: 'Unauthorized: กรุณาเข้าสู่ระบบ' }, { status: 401 });
-    }
+    if (!token) return NextResponse.json({ error: 'Unauthorized: กรุณาเข้าสู่ระบบ' }, { status: 401 });
 
     const actualUserId = token.id as string;
     const body = await request.json();
-    
-    // 🚩 รับข้อมูลใหม่เข้ามาให้ครบ
- const { 
-      driverId, firstName, lastName, birthDate, racingNumber, events, primaryClass, crossEntry,
-      nickname, nationality, licenseNo, licenseImageUrl, shirtSize, bloodType, mobileNo, // 🚩 เพิ่ม licenseImageUrl
-      guardianName, guardianId, guardianNationality, guardianMobile 
+
+    const { 
+      driverId, firstName, lastName, birthDate, nickname, nationality, 
+      licenseNo, licenseImageUrl, shirtSize, bloodType, mobileNo,
+      guardianName, guardianId, guardianNationality, guardianMobile,
+      primaryClass, racingNumber, events 
     } = body;
 
-    let secondaryClass = null;
-    if (crossEntry) {
-      if (primaryClass === 'Micro MAX') secondaryClass = 'Micro Rookie';
-      else if (primaryClass === 'Mini MAX') secondaryClass = 'Mini Rookie';
-      else if (primaryClass === 'Senior MAX Masters') secondaryClass = 'Senior MAX';
-    }
+    let finalDriverId = driverId;
 
-    for (const eventId of events) {
-      await prisma.event.upsert({
-        where: { id: eventId },
-        update: {},
-        create: {
-          id: eventId,
-          name: `Round ${eventId}`,
-          location: eventId.includes('R3') || eventId.includes('R4') || eventId.includes('R5') ? 'Lyl Kart' : 'Bira Kart',
-          startDate: new Date('2026-01-01'), 
-          endDate: new Date('2026-01-02'),
-          isDoubleHeader: eventId.includes('DOUBLE')
-        }
-      });
-    }
-
-    const registrationsData = events.map((eventId: string) => ({
-      eventId: eventId,
-      category: primaryClass,
-      crossEntry: secondaryClass,
-      racingNumber: parseInt(racingNumber)
-    }));
-
-    // 🚩 ก้อนข้อมูลส่วนตัวนักแข่งที่จะบันทึก (ยุบรวมไว้จะได้โค้ดไม่ยาว)
-const driverData = {
-      firstName, lastName, birthDate: new Date(birthDate),
-      nickname, nationality, licenseNo, licenseImageUrl, shirtSize, bloodType, mobileNo, // 🚩 เพิ่มตรงนี้
-      guardianName, guardianId, guardianNationality, guardianMobile
-    };
-
-    let result;
-    if (driverId) {
-      // 🔄 อัปเดตข้อมูลคนเก่า
-      result = await prisma.driver.update({
-        where: { id: driverId, userId: actualUserId },
+    // 1. ถ้ายังไม่มี driverId (กรอกข้อมูลคนใหม่จากหน้า Participant) ให้สร้างประวัติก่อน
+    if (!finalDriverId) {
+      const newDriver = await prisma.driver.create({
         data: {
-          ...driverData,
-          registrations: { create: registrationsData }
-        }
-      });
-    } else {
-      // 🆕 สร้างคนใหม่
-      result = await prisma.driver.create({
-        data: {
-          ...driverData,
           userId: actualUserId,
-          registrations: { create: registrationsData }
+          firstName, lastName, birthDate: new Date(birthDate),
+          nickname, nationality, licenseNo, licenseImageUrl, shirtSize, bloodType, mobileNo,
+          guardianName, guardianId, guardianNationality, guardianMobile
+        }
+      });
+      finalDriverId = newDriver.id;
+    }
+
+    // 2. ลบ prisma.event ทิ้งไปเลย! แล้วมาเซฟลงตาราง Registration (ใบสมัคร) โดยตรง
+    for (const eventId of events) {
+      await prisma.registration.create({
+        data: {
+          driverId: finalDriverId,
+          eventId: eventId,
+          category: primaryClass,
+          racingNumber: racingNumber.toString(),
+          paymentStatus: 'PENDING'
         }
       });
     }
 
-    return NextResponse.json({ success: true, driverId: result.id });
+    return NextResponse.json({ success: true });
 
   } catch (error: any) {
-    console.error("REGISTRATION ERROR:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error("Register API Error:", error);
+    return NextResponse.json({ error: error.message || 'เกิดข้อผิดพลาดในการลงทะเบียน' }, { status: 500 });
   }
 }
