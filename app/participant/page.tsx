@@ -1,5 +1,8 @@
 "use client";
 
+// 🚩 บังคับ Dynamic ป้องกัน Error จาก useSearchParams บน Vercel
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -11,7 +14,7 @@ const ENTRY_FEES: Record<string, number> = {
   'Senior MAX': 30000,
   'Senior MAX Masters': 30000,
   'MAX DD2': 30000,
-  'MAX DD2 Masters': 30000, // 🚩 เพิ่มรุ่นนี้แล้ว!
+  'MAX DD2 Masters': 30000,
 };
 
 const formatTHB = (amount: number) => {
@@ -23,7 +26,6 @@ function RegistrationForm() {
   const preSelectedDriverId = searchParams.get('driverId');
   const router = useRouter();
   
-
   const [formData, setFormData] = useState({
     driverId: '', firstName: '', lastName: '', birthDate: '', nickname: '', 
     nationality: '', licenseNo: '', licenseImageUrl: '', shirtSize: '', bloodType: '', 
@@ -34,36 +36,17 @@ function RegistrationForm() {
   const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
   const [availableClasses, setAvailableClasses] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [teamDrivers, setTeamDrivers] = useState<any[]>([]);
+  const [teamDrivers, setTeamDrivers] = useState<any[]>([]); // 🚩 นี่คือตัวแปรเก็บรายชื่อ
   const [fetchingDrivers, setFetchingDrivers] = useState(true);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   
-// เมื่อโหลดรายชื่อเสร็จ ให้เช็คว่ามีการส่ง driverId มาจากหน้า VIP หรือไม่
-useEffect(() => {
-  if (drivers.length > 0 && preSelectedDriverId) {
-    const preSelected = drivers.find(d => d.rawId === preSelectedDriverId);
-    if (preSelected) {
-      handleDriverSelect(preSelected);
-    }
-  }
-}, [drivers, preSelectedDriverId]);
-
-// ฟังก์ชันสำหรับเซ็ตค่าต่างๆ อัตโนมัติ
-const handleDriverSelect = (driver: any) => {
-  setSelectedDriver(driver.rawId);
-  // ดึง Category และ เบอร์รถ เดิมมาใส่ให้อัตโนมัติ!
-  if (driver.category && driver.category !== 'Unknown') {
-    setPrimaryClass(driver.category);
-  }
-  if (driver.racingNumber && driver.racingNumber !== '-') {
-    setRacingNumber(driver.racingNumber);
-  }
-};
+  // 🚩 ดึงข้อมูลสนามที่เลือกมาจาก URL
   useEffect(() => {
     const eventsParam = searchParams.get('events');
     if (eventsParam) setSelectedEvents(eventsParam.split(','));
   }, [searchParams]);
 
+  // 🚩 ดึงรายชื่อนักแข่งในทีม
   useEffect(() => {
     const fetchTeamDrivers = async () => {
       try {
@@ -81,7 +64,45 @@ const handleDriverSelect = (driver: any) => {
     fetchTeamDrivers();
   }, []);
 
-  // 🚩 อัปเดตการคำนวณอายุ เพิ่ม DD2 Masters
+  // 🚩 ฟังก์ชันเซ็ตข้อมูลนักแข่งลงฟอร์ม (รวมการดึง Class และ เบอร์รถมาใส่ให้ด้วย)
+  const handleSelectExistingDriver = (driver: any) => {
+    const nameParts = driver.name.split(' ');
+    setFormData(prev => ({
+      ...prev, 
+      driverId: driver.rawId, 
+      firstName: nameParts[0] || '', 
+      lastName: nameParts.slice(1).join(' ') || '',
+      birthDate: driver.rawBirthDate ? new Date(driver.rawBirthDate).toISOString().split('T')[0] : '',
+      nickname: driver.nickname || '', 
+      nationality: driver.nationality || '', 
+      licenseNo: driver.licenseNo || '',
+      licenseImageUrl: driver.licenseImageUrl || '', 
+      shirtSize: driver.shirtSize || '',
+      bloodType: driver.bloodType || '', 
+      mobileNo: driver.mobileNo || '',
+      guardianName: driver.guardianName || '', 
+      guardianId: driver.guardianId || '',
+      guardianNationality: driver.guardianNationality || '', 
+      guardianMobile: driver.guardianMobile || '',
+      // 👇 ดึง Class และเบอร์รถเดิมมาใส่ให้ ถ้ามีข้อมูล!
+      primaryClass: (driver.category && driver.category !== 'Unknown') ? driver.category : '',
+      racingNumber: (driver.racingNumber && driver.racingNumber !== '-') ? driver.racingNumber : '', 
+      crossEntry: false
+    }));
+    setIsEditingProfile(false); 
+  };
+
+  // 🚩 เช็คว่าถ้ากดมาจากปุ่มหน้า VIP (มี ID ส่งมา) ให้ดึงข้อมูลมาใส่ฟอร์มทันที
+  useEffect(() => {
+    if (teamDrivers.length > 0 && preSelectedDriverId) {
+      const preSelected = teamDrivers.find(d => d.rawId === preSelectedDriverId);
+      if (preSelected) {
+        handleSelectExistingDriver(preSelected);
+      }
+    }
+  }, [teamDrivers, preSelectedDriverId]);
+
+  // คำนวณอายุและหา Class ที่ลงแข่งได้
   useEffect(() => {
     if (formData.birthDate) {
       const birthYear = new Date(formData.birthDate).getFullYear();
@@ -95,11 +116,12 @@ const handleDriverSelect = (driver: any) => {
       if (ageIn2026 >= 15) classes.push('MAX DD2');
       if (ageIn2026 >= 32) {
         classes.push('Senior MAX Masters');
-        classes.push('MAX DD2 Masters'); // 🚩 เพิ่มตรงนี้!
+        classes.push('MAX DD2 Masters');
       }
 
       setAvailableClasses(classes);
-      if (!classes.includes(formData.primaryClass)) {
+      // ถ้าเปลี่ยนวันเกิดแล้ว Class เดิมไม่อยู่ในเกณฑ์ ให้รีเซ็ต Class เป็นค่าว่าง
+      if (formData.primaryClass && !classes.includes(formData.primaryClass)) {
         setFormData(prev => ({ ...prev, primaryClass: '', crossEntry: false }));
       }
     } else {
@@ -117,21 +139,6 @@ const handleDriverSelect = (driver: any) => {
     }
   };
 
-  const handleSelectExistingDriver = (driver: any) => {
-    const nameParts = driver.name.split(' ');
-    setFormData({
-      ...formData, driverId: driver.rawId, firstName: nameParts[0], lastName: nameParts.slice(1).join(' '),
-      birthDate: driver.rawBirthDate ? new Date(driver.rawBirthDate).toISOString().split('T')[0] : '',
-      nickname: driver.nickname || '', nationality: driver.nationality || '', licenseNo: driver.licenseNo || '',
-      licenseImageUrl: driver.licenseImageUrl || '', shirtSize: driver.shirtSize || '',
-      bloodType: driver.bloodType || '', mobileNo: driver.mobileNo || '',
-      guardianName: driver.guardianName || '', guardianId: driver.guardianId || '',
-      guardianNationality: driver.guardianNationality || '', guardianMobile: driver.guardianMobile || '',
-      racingNumber: '', primaryClass: '', crossEntry: false
-    });
-    setIsEditingProfile(false); 
-  };
-
   const handleNewDriver = () => {
     setFormData({
       driverId: '', firstName: '', lastName: '', birthDate: '', nickname: '', nationality: '', licenseNo: '', licenseImageUrl: '', shirtSize: '', bloodType: '', mobileNo: '', guardianName: '', guardianId: '', guardianNationality: '', guardianMobile: '', racingNumber: '', primaryClass: '', crossEntry: false
@@ -139,8 +146,8 @@ const handleDriverSelect = (driver: any) => {
     setIsEditingProfile(false);
   };
 
-  // 🚩 ฟังก์ชันตรวจสอบความถูกต้องของเบอร์รถตามกฎ RMC
   const validateRacingNumber = () => {
+    if (!formData.racingNumber) return null;
     const n = parseInt(formData.racingNumber);
     const cls = formData.primaryClass;
     if (cls === 'Micro MAX' && (n < 1 || n > 99)) return "Micro MAX ต้องใช้เบอร์ 1 - 99";
@@ -158,7 +165,6 @@ const handleDriverSelect = (driver: any) => {
     if (!formData.primaryClass) return alert("กรุณาเลือกรุ่นการแข่งขัน (Class)");
     if (selectedEvents.length === 0) return alert("ไม่พบรายการแข่งขัน กรุณากลับไปเลือกสนามใหม่");
 
-    // 🚩 เช็คเบอร์รถก่อนบันทึก!
     const numberError = validateRacingNumber();
     if (numberError) return alert(`❌ ผิดกฎหมายเลขรถ:\n${numberError}`);
 
@@ -199,7 +205,7 @@ const handleDriverSelect = (driver: any) => {
             </button>
             {teamDrivers.map((driver, idx) => (
               <button key={idx} type="button" onClick={() => handleSelectExistingDriver(driver)} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 transition ${formData.driverId === driver.rawId ? 'border-[#cba052] bg-[#cba052]/20 text-white' : 'border-gray-800 text-gray-400 hover:border-gray-600 bg-[#111]'}`}>
-                <i className="fas fa-user-astronaut mr-2"></i> {driver.name}
+                <i className="fas fa-user-astronaut mr-2"></i> {driver.name} {driver.racingNumber !== '-' ? `(#${driver.racingNumber})` : ''}
               </button>
             ))}
           </div>
@@ -234,7 +240,7 @@ const handleDriverSelect = (driver: any) => {
         </div>
       </div>
 
-      {/* --- โซนเลือกรุ่นแข่ง (ย้ายมาใกล้ข้อมูลส่วนตัว) --- */}
+      {/* --- โซนเลือกรุ่นแข่ง --- */}
       <div className="bg-[#1a1a1a] p-6 rounded-xl border border-gray-800 shadow-lg">
         <h3 className="text-lg font-bold mb-4 text-[#cba052] uppercase tracking-tight">2. Category & Racing Number</h3>
         {!formData.birthDate ? (
@@ -259,7 +265,6 @@ const handleDriverSelect = (driver: any) => {
           </div>
         )}
 
-        {/* 🚩 ช่องกรอกเบอร์รถ จะโชว์คำใบ้(Hint) ตามรุ่นที่เลือก */}
         {formData.primaryClass && (
           <div className="mt-4 p-4 border border-[#E43138]/30 bg-[#E43138]/10 rounded-lg inline-block w-full md:w-auto">
              <label className="block text-xs font-bold text-[#E43138] mb-1 uppercase">Assigned Racing Number *</label>
@@ -281,24 +286,25 @@ const handleDriverSelect = (driver: any) => {
           </div>
         )}
       </div>
-{/* แก้ไขส่วนสรุปราคาด้านล่างสุด */}
-<div className="bg-black p-6 rounded-xl border border-gray-800 flex flex-col md:flex-row justify-between items-center shadow-2xl mt-8 mb-20">
-  <div className="mb-4 md:mb-0 text-center md:text-left">
-    <p className="text-gray-500 font-bold text-sm uppercase">Total Entry Fee</p>
-    <div className="text-3xl font-black text-white">
-      {totalFee > 0 ? formatTHB(totalFee) : '฿ 0'}
-    </div>
-    {totalFee > 0 && <p className="text-xs text-[#E43138] mt-1">{formatTHB(baseFee)} x {selectedEvents.length} Event(s)</p>}
-  </div>
-  
-  <button 
-    type="submit" 
-    disabled={loading || totalFee === 0} 
-    className="w-full md:w-auto px-10 py-4 font-black tracking-widest text-white bg-[#E43138] rounded-lg hover:bg-red-700 transition disabled:opacity-50 shadow-[0_0_20px_rgba(228,49,56,0.3)]"
-  >
-    {loading ? 'SAVING...' : 'CONFIRM REGISTRATION'}
-  </button>
-</div>
+
+      {/* --- โซนสรุปราคา --- */}
+      <div className="bg-black p-6 rounded-xl border border-gray-800 flex flex-col md:flex-row justify-between items-center shadow-2xl mt-8 mb-20">
+        <div className="mb-4 md:mb-0 text-center md:text-left">
+          <p className="text-gray-500 font-bold text-sm uppercase">Total Entry Fee</p>
+          <div className="text-3xl font-black text-white">
+            {totalFee > 0 ? formatTHB(totalFee) : '฿ 0'}
+          </div>
+          {totalFee > 0 && <p className="text-xs text-[#E43138] mt-1">{formatTHB(baseFee)} x {selectedEvents.length} Event(s)</p>}
+        </div>
+        
+        <button 
+          type="submit" 
+          disabled={loading || totalFee === 0} 
+          className="w-full md:w-auto px-10 py-4 font-black tracking-widest text-white bg-[#E43138] rounded-lg hover:bg-red-700 transition disabled:opacity-50 shadow-[0_0_20px_rgba(228,49,56,0.3)]"
+        >
+          {loading ? 'SAVING...' : 'CONFIRM REGISTRATION'}
+        </button>
+      </div>
     </form>
   );
 }
