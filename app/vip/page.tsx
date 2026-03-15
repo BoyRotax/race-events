@@ -28,14 +28,13 @@ export default function VipDashboard() {
     }
   };
 
-  // 🚩 ฟังก์ชันยกเลิกพร้อมเช็คสถานะการจ่ายเงิน
   const handleCancelRegistration = async (driverId: string, eventId: string, paymentStatus: string) => {
-    let confirmMessage = `แน่ใจหรือไม่ว่าต้องการยกเลิกการลงสมัครสนาม ${eventId}?`;
+    let confirmMessage = `Are you sure you want to cancel the registration for ${eventId}?`;
 
     if (paymentStatus === 'PAID') {
-      confirmMessage = `🚨 แจ้งเตือน: สนาม ${eventId} นี้ "ชำระเงินเรียบร้อยแล้ว"\nหากยกเลิก คุณอาจไม่สามารถขอคืนเงินได้\n\nยืนยันที่จะยกเลิกจริงๆ หรือไม่?`;
+      confirmMessage = `🚨 WARNING: Event ${eventId} is already "PAID".\nIf you cancel now, you may not be eligible for a refund.\n\nDo you still want to proceed with the cancellation?`;
     } else if (paymentStatus === 'WAITING_APPROVAL') {
-      confirmMessage = `⏳ แจ้งเตือน: สนาม ${eventId} นี้อยู่ระหว่าง "รอตรวจสอบสลิป"\nยืนยันที่จะยกเลิกหรือไม่?`;
+      confirmMessage = `⏳ NOTE: Event ${eventId} is currently "WAITING FOR PAYMENT APPROVAL".\nDo you want to proceed with the cancellation?`;
     }
 
     if (!confirm(confirmMessage)) return;
@@ -48,14 +47,14 @@ export default function VipDashboard() {
       });
       
       if (res.ok) {
-        alert('✅ ยกเลิกการลงทะเบียนสำเร็จ!');
+        alert('✅ Registration cancelled successfully!');
         window.location.reload(); 
       } else {
         const data = await res.json();
-        alert(`❌ ยกเลิกไม่ได้: ${data.error}`);
+        alert(`❌ Failed to cancel: ${data.error}`);
       }
     } catch (err) {
-      alert('เกิดข้อผิดพลาด');
+      alert('An error occurred while communicating with the server.');
     }
   };
 
@@ -80,12 +79,12 @@ export default function VipDashboard() {
           </Link>
         </div>
 
-        {/* 🚨 แจ้งเตือนยอดค้างชำระ */}
+        {/* 🚨 Pending Payment Alert */}
         {drivers.some(d => d.payment === 'PENDING' && d.events.length > 0) && (
           <div className="mb-8 bg-red-900/20 border border-[#E43138] rounded-xl p-6 flex flex-col md:flex-row justify-between items-center shadow-[0_0_20px_rgba(228,49,56,0.1)]">
             <div className="mb-4 md:mb-0">
               <h3 className="text-xl font-black text-[#E43138] uppercase"><i className="fas fa-exclamation-triangle mr-2"></i> Pending Payment</h3>
-              <p className="text-gray-400 text-sm font-bold">คุณมีรายการลงแข่งที่ยังไม่ได้ชำระเงิน กรุณาชำระเงินเพื่อยืนยันสิทธิ์</p>
+              <p className="text-gray-400 text-sm font-bold">You have pending event registrations. Please complete the payment to secure your slots.</p>
             </div>
             <Link href="/checkout" className="w-full md:w-auto px-8 py-3 bg-[#E43138] text-white font-black tracking-widest uppercase rounded hover:bg-red-700 transition text-center shadow-lg">
               VIEW INVOICE & PAY
@@ -93,25 +92,24 @@ export default function VipDashboard() {
           </div>
         )}
 
-        {/* 📋 โซนการ์ดนักแข่ง (Driver Cards) */}
+        {/* 📋 Driver Cards */}
         {drivers.length === 0 ? (
           <div className="bg-[#1a1a1a] p-10 rounded-xl border border-gray-800 text-center">
             <i className="fas fa-car-crash text-4xl text-gray-600 mb-4"></i>
             <h3 className="text-xl font-bold text-gray-400 uppercase">Garage is empty</h3>
-            <p className="text-gray-600">ยังไม่มีนักแข่งในทีม กดปุ่มเพิ่มนักแข่งเพื่อเริ่มต้น</p>
+            <p className="text-gray-600">No drivers found in your team. Click the button above to register a new driver.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {drivers.map((driver) => (
               <div key={driver.id} className="bg-[#1a1a1a] border border-gray-800 rounded-xl overflow-hidden shadow-2xl relative group hover:border-[#cba052] transition-colors flex flex-col">
                 
-                {/* แถบสีด้านบนบอกสถานะการจ่ายเงิน */}
+                {/* Status Bar */}
                 <div className={`h-2 w-full ${driver.payment === 'PAID' ? 'bg-green-500' : 'bg-[#E43138]'}`}></div>
 
                 <div className="p-5 flex-grow">
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-4">
-                      {/* รูปใบขับแข่ง / อวตาร */}
                       {driver.licenseImageUrl ? (
                         <img src={driver.licenseImageUrl} alt="License" className="w-16 h-16 rounded-full object-cover border-2 border-[#E43138]" />
                       ) : (
@@ -130,32 +128,31 @@ export default function VipDashboard() {
                       </div>
                     </div>
                     
-                    {/* เบอร์รถตัวใหญ่เบิ้ม! */}
+                    {/* Racing Number */}
                     <div className="bg-black border border-gray-800 text-white w-12 h-12 rounded-lg flex items-center justify-center font-black text-2xl shadow-inner shrink-0">
                       {driver.racingNumber}
                     </div>
                   </div>
 
-                  {/* 🚩 ป้ายสถานะ (ชำระเงิน & ใบขับแข่ง) */}
+                  {/* 🚩 Status Badges */}
                   <div className="flex flex-wrap gap-2 mt-3 mb-4 border-b border-gray-800/50 pb-4">
                     {driver.licenseImageUrl ? (
-                      <span className="bg-[#cba052]/20 text-[#cba052] text-[10px] px-2 py-1 rounded border border-[#cba052]/50 font-bold uppercase tracking-wider"><i className="fas fa-id-badge mr-1"></i> มีใบขับแข่ง</span>
+                      <span className="bg-[#cba052]/20 text-[#cba052] text-[10px] px-2 py-1 rounded border border-[#cba052]/50 font-bold uppercase tracking-wider"><i className="fas fa-id-badge mr-1"></i> LICENSED</span>
                     ) : (
-                      <span className="bg-gray-900 text-gray-500 text-[10px] px-2 py-1 rounded border border-gray-700 font-bold uppercase tracking-wider"><i className="fas fa-times-circle mr-1"></i> ไม่มีใบขับแข่ง</span>
+                      <span className="bg-gray-900 text-gray-500 text-[10px] px-2 py-1 rounded border border-gray-700 font-bold uppercase tracking-wider"><i className="fas fa-times-circle mr-1"></i> NO LICENSE</span>
                     )}
 
                     {driver.events.length > 0 && (
                       driver.payment === 'PAID' ? (
-                        <span className="bg-green-900/50 text-green-400 text-[10px] px-2 py-1 rounded border border-green-700 font-bold uppercase tracking-wider"><i className="fas fa-check-circle mr-1"></i> ชำระเงินแล้ว</span>
+                        <span className="bg-green-900/50 text-green-400 text-[10px] px-2 py-1 rounded border border-green-700 font-bold uppercase tracking-wider"><i className="fas fa-check-circle mr-1"></i> PAID</span>
                       ) : driver.payment === 'WAITING_APPROVAL' ? (
-                        <span className="bg-blue-900/50 text-blue-400 text-[10px] px-2 py-1 rounded border border-blue-700 font-bold uppercase tracking-wider"><i className="fas fa-spinner fa-spin mr-1"></i> รอตรวจสลิป</span>
+                        <span className="bg-blue-900/50 text-blue-400 text-[10px] px-2 py-1 rounded border border-blue-700 font-bold uppercase tracking-wider"><i className="fas fa-spinner fa-spin mr-1"></i> VERIFYING PAYMENT</span>
                       ) : (
-                        <span className="bg-red-900/50 text-red-400 text-[10px] px-2 py-1 rounded border border-red-700 font-bold uppercase tracking-wider"><i className="fas fa-exclamation-circle mr-1"></i> รอชำระเงิน</span>
+                        <span className="bg-red-900/50 text-red-400 text-[10px] px-2 py-1 rounded border border-red-700 font-bold uppercase tracking-wider"><i className="fas fa-exclamation-circle mr-1"></i> PENDING PAYMENT</span>
                       )
                     )}
                   </div>
 
-                  {/* รุ่นการแข่งขัน */}
                   <div className="mb-4 bg-black p-3 rounded border border-gray-800 flex justify-between items-center">
                     <div>
                       <p className="text-xs text-gray-500 font-bold uppercase mb-1">Class</p>
@@ -169,7 +166,6 @@ export default function VipDashboard() {
                     )}
                   </div>
 
-                  {/* ข้อมูลอื่นๆ */}
                   <div className="grid grid-cols-2 gap-2 text-sm mb-4">
                     <div className="bg-black/50 p-2 rounded border border-gray-800">
                       <p className="text-[10px] text-gray-500 uppercase font-bold">Shirt Size</p>
@@ -181,7 +177,7 @@ export default function VipDashboard() {
                     </div>
                   </div>
 
-                  {/* รายการสนามที่ลงทะเบียนแล้ว */}
+                  {/* 🚩 Registered Events (With visible Cancel button) */}
                   {driver.events.length > 0 && (
                     <div className="mb-2">
                       <p className="text-[10px] text-gray-500 uppercase font-bold mb-2">Registered Events</p>
@@ -189,13 +185,12 @@ export default function VipDashboard() {
                         {driver.events.map((ev: string, i: number) => (
                           <div key={i} className="flex items-center bg-blue-900/30 text-blue-400 text-[11px] font-bold px-2 py-1 rounded border border-blue-800/50">
                             {ev}
-                            {/* 🚩 ปุ่มกากบาทยกเลิก (ส่ง paymentStatus ไปด้วย) */}
                             <button 
                               onClick={() => handleCancelRegistration(driver.rawId, ev, driver.payment)}
-                              className="ml-2 text-red-500 hover:text-red-300 transition"
-                              title="ยกเลิกการลงแข่งสนามนี้"
+                              className="ml-2 bg-red-900/50 text-red-500 hover:bg-red-500 hover:text-white w-5 h-5 rounded-full flex items-center justify-center transition"
+                              title="Cancel this event"
                             >
-                              <i className="fas fa-times"></i>
+                              <span className="font-bold pb-[2px]">&times;</span>
                             </button>
                           </div>
                         ))}
@@ -204,7 +199,6 @@ export default function VipDashboard() {
                   )}
                 </div>
 
-                {/* 🛠️ Action Buttons (อยู่ด้านล่างสุดของการ์ดเสมอ) */}
                 <div className="p-5 pt-0 mt-auto border-t border-gray-800/50">
                   <div className="flex flex-col md:flex-row gap-2 mt-4">
                     <Link 
