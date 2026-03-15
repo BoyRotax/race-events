@@ -36,17 +36,15 @@ function RegistrationForm() {
   const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
   const [availableClasses, setAvailableClasses] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [teamDrivers, setTeamDrivers] = useState<any[]>([]); // 🚩 นี่คือตัวแปรเก็บรายชื่อ
+  const [teamDrivers, setTeamDrivers] = useState<any[]>([]);
   const [fetchingDrivers, setFetchingDrivers] = useState(true);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   
-  // 🚩 ดึงข้อมูลสนามที่เลือกมาจาก URL
   useEffect(() => {
     const eventsParam = searchParams.get('events');
     if (eventsParam) setSelectedEvents(eventsParam.split(','));
   }, [searchParams]);
 
-  // 🚩 ดึงรายชื่อนักแข่งในทีม
   useEffect(() => {
     const fetchTeamDrivers = async () => {
       try {
@@ -64,7 +62,6 @@ function RegistrationForm() {
     fetchTeamDrivers();
   }, []);
 
-  // 🚩 ฟังก์ชันเซ็ตข้อมูลนักแข่งลงฟอร์ม (รวมการดึง Class และ เบอร์รถมาใส่ให้ด้วย)
   const handleSelectExistingDriver = (driver: any) => {
     const nameParts = driver.name.split(' ');
     setFormData(prev => ({
@@ -84,7 +81,6 @@ function RegistrationForm() {
       guardianId: driver.guardianId || '',
       guardianNationality: driver.guardianNationality || '', 
       guardianMobile: driver.guardianMobile || '',
-      // 👇 ดึง Class และเบอร์รถเดิมมาใส่ให้ ถ้ามีข้อมูล!
       primaryClass: (driver.category && driver.category !== 'Unknown') ? driver.category : '',
       racingNumber: (driver.racingNumber && driver.racingNumber !== '-') ? driver.racingNumber : '', 
       crossEntry: false
@@ -92,7 +88,6 @@ function RegistrationForm() {
     setIsEditingProfile(false); 
   };
 
-  // 🚩 เช็คว่าถ้ากดมาจากปุ่มหน้า VIP (มี ID ส่งมา) ให้ดึงข้อมูลมาใส่ฟอร์มทันที
   useEffect(() => {
     if (teamDrivers.length > 0 && preSelectedDriverId) {
       const preSelected = teamDrivers.find(d => d.rawId === preSelectedDriverId);
@@ -102,7 +97,6 @@ function RegistrationForm() {
     }
   }, [teamDrivers, preSelectedDriverId]);
 
-  // คำนวณอายุและหา Class ที่ลงแข่งได้
   useEffect(() => {
     if (formData.birthDate) {
       const birthYear = new Date(formData.birthDate).getFullYear();
@@ -120,7 +114,6 @@ function RegistrationForm() {
       }
 
       setAvailableClasses(classes);
-      // ถ้าเปลี่ยนวันเกิดแล้ว Class เดิมไม่อยู่ในเกณฑ์ ให้รีเซ็ต Class เป็นค่าว่าง
       if (formData.primaryClass && !classes.includes(formData.primaryClass)) {
         setFormData(prev => ({ ...prev, primaryClass: '', crossEntry: false }));
       }
@@ -163,7 +156,7 @@ function RegistrationForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.primaryClass) return alert("กรุณาเลือกรุ่นการแข่งขัน (Class)");
-    if (selectedEvents.length === 0) return alert("ไม่พบรายการแข่งขัน กรุณากลับไปเลือกสนามใหม่");
+    if (selectedEvents.length === 0) return alert("🚨 คุณยังไม่ได้เลือกสนามแข่งขัน! \n\nกรุณากดปุ่ม BACK TO GARAGE แล้วไปกดปุ่ม SELECT EVENT (สีแดงด้านบน) เพื่อเลือกสนามก่อนครับ");
 
     const numberError = validateRacingNumber();
     if (numberError) return alert(`❌ ผิดกฎหมายเลขรถ:\n${numberError}`);
@@ -295,11 +288,18 @@ function RegistrationForm() {
             {totalFee > 0 ? formatTHB(totalFee) : '฿ 0'}
           </div>
           {totalFee > 0 && <p className="text-xs text-[#E43138] mt-1">{formatTHB(baseFee)} x {selectedEvents.length} Event(s)</p>}
+          
+          {/* 🚨 แจ้งเตือนตรงนี้เลย ถ้าแอบลืมเลือกสนาม! */}
+          {selectedEvents.length === 0 && (
+            <div className="mt-2 text-[#E43138] font-bold text-xs bg-red-900/20 px-3 py-1 rounded border border-red-700/50 inline-block">
+              <i className="fas fa-exclamation-triangle mr-1"></i> ยอดเป็น 0 เพราะยังไม่ได้เลือกสนามครับ!
+            </div>
+          )}
         </div>
         
         <button 
           type="submit" 
-          disabled={loading || totalFee === 0} 
+          disabled={loading} // 🚩 ปลดล็อกให้กดได้แล้ว! จะได้เด้ง Alert บอกบอสได้
           className="w-full md:w-auto px-10 py-4 font-black tracking-widest text-white bg-[#E43138] rounded-lg hover:bg-red-700 transition disabled:opacity-50 shadow-[0_0_20px_rgba(228,49,56,0.3)]"
         >
           {loading ? 'SAVING...' : 'CONFIRM REGISTRATION'}
@@ -312,7 +312,15 @@ function RegistrationForm() {
 export default function ParticipantPage() {
   return (
     <div className="bg-[#111111] min-h-screen pb-20 text-white">
-      <div className="max-w-4xl mx-auto px-4 mt-12">
+      <div className="max-w-4xl mx-auto px-4 mt-8 md:mt-12">
+        
+        {/* 🔙 🚩 ปุ่ม Back to Garage อยู่ตรงนี้ครับบอส! */}
+        <div className="mb-6">
+          <Link href="/vip" className="text-[#E43138] hover:text-white text-sm font-bold transition inline-flex items-center">
+            <i className="fas fa-arrow-left mr-2"></i> BACK TO GARAGE
+          </Link>
+        </div>
+
         <h2 className="text-3xl font-black uppercase mb-8">Driver <span className="text-[#E43138]">Registration</span></h2>
         <Suspense fallback={<div>LOADING...</div>}><RegistrationForm /></Suspense>
       </div>
