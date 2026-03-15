@@ -11,17 +11,16 @@ export async function POST(request: NextRequest) {
 
     const { driverId, eventId } = await request.json();
 
-    // ลบการลงทะเบียน (เฉพาะที่ยังเป็น PENDING หรือรอจ่ายเงิน)
+    // 🚩 สั่งลบข้อมูลการแข่งของสนามนี้ (เพราะระบบหน้าเว็บดักการ Confirm ไว้แล้ว)
     const result = await prisma.registration.deleteMany({
       where: {
         driverId: driverId,
-        eventId: eventId,
-        paymentStatus: 'PENDING' // 🚩 ป้องกันไม่ให้กดยกเลิกสนามที่ "จ่ายเงินแล้ว (PAID)"
+        eventId: eventId
       }
     });
 
     if (result.count === 0) {
-      return NextResponse.json({ error: 'ไม่สามารถยกเลิกได้ (อาจชำระเงินไปแล้ว)' }, { status: 400 });
+      return NextResponse.json({ error: 'ไม่พบข้อมูลการลงทะเบียน' }, { status: 400 });
     }
 
     return NextResponse.json({ success: true });
