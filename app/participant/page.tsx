@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react'; // 🚩 โหลด Session มาเช็คสิทธิ์
 
 const ENTRY_FEES: Record<string, number> = {
   'Micro MAX': 21000,
@@ -22,6 +23,7 @@ const formatTHB = (amount: number) => {
 };
 
 function RegistrationForm() {
+  const { data: session } = useSession(); // 🚩 ดึงข้อมูล Session
   const searchParams = useSearchParams();
   const preSelectedDriverId = searchParams.get('driverId');
   const router = useRouter();
@@ -74,6 +76,7 @@ function RegistrationForm() {
       nationality: driver.nationality || '', 
       licenseNo: driver.licenseNo || '',
       licenseImageUrl: driver.licenseImageUrl || '', 
+      shirtSize: '', // บังคับให้เลือกไซส์ใหม่เสมอ
       bloodType: driver.bloodType || '', 
       mobileNo: driver.mobileNo || '',
       guardianName: driver.guardianName || '', 
@@ -124,7 +127,7 @@ function RegistrationForm() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) return alert("ขนาดไฟล์รูปเกิน 2MB ครับ");
+      if (file.size > 2 * 1024 * 1024) return alert("Image size exceeds 2MB limit.");
       const reader = new FileReader();
       reader.onloadend = () => setFormData({ ...formData, licenseImageUrl: reader.result as string });
       reader.readAsDataURL(file);
@@ -142,23 +145,23 @@ function RegistrationForm() {
     if (!formData.racingNumber) return null;
     const n = parseInt(formData.racingNumber);
     const cls = formData.primaryClass;
-    if (cls === 'Micro MAX' && (n < 1 || n > 99)) return "Micro MAX ต้องใช้เบอร์ 1 - 99";
-    if (cls === 'Mini MAX' && (n < 100 || n > 199)) return "Mini MAX ต้องใช้เบอร์ 100 - 199";
-    if (cls === 'Junior MAX' && (n < 200 || n > 299)) return "Junior MAX ต้องใช้เบอร์ 200 - 299";
-    if (cls === 'Senior MAX' && (n < 300 || n > 399)) return "Senior MAX ต้องใช้เบอร์ 300 - 399";
-    if (cls === 'Senior MAX Masters' && (n < 900 || n > 999)) return "Senior MAX Masters ต้องใช้เบอร์ 900 - 999";
-    if (cls === 'MAX DD2' && (n < 400 || n > 499)) return "MAX DD2 ต้องใช้เบอร์ 400 - 499";
-    if (cls === 'MAX DD2 Masters' && (n < 500 || n > 599)) return "MAX DD2 Masters ต้องใช้เบอร์ 500 - 599";
+    if (cls === 'Micro MAX' && (n < 1 || n > 99)) return "Micro MAX requires number 1 - 99";
+    if (cls === 'Mini MAX' && (n < 100 || n > 199)) return "Mini MAX requires number 100 - 199";
+    if (cls === 'Junior MAX' && (n < 200 || n > 299)) return "Junior MAX requires number 200 - 299";
+    if (cls === 'Senior MAX' && (n < 300 || n > 399)) return "Senior MAX requires number 300 - 399";
+    if (cls === 'Senior MAX Masters' && (n < 900 || n > 999)) return "Senior MAX Masters requires number 900 - 999";
+    if (cls === 'MAX DD2' && (n < 400 || n > 499)) return "MAX DD2 requires number 400 - 499";
+    if (cls === 'MAX DD2 Masters' && (n < 500 || n > 599)) return "MAX DD2 Masters requires number 500 - 599";
     return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.primaryClass) return alert("กรุณาเลือกรุ่นการแข่งขัน (Class)");
-    if (selectedEvents.length === 0) return alert("🚨 คุณยังไม่ได้เลือกสนามแข่งขัน! \n\nกรุณากดปุ่ม BACK TO GARAGE แล้วไปกดปุ่ม SELECT EVENT (สีแดงด้านบน) เพื่อเลือกสนามก่อนครับ");
+    if (!formData.primaryClass) return alert("Please select a Category (Class).");
+    if (selectedEvents.length === 0) return alert("🚨 No event selected!\n\nPlease go back and select an event to proceed.");
 
     const numberError = validateRacingNumber();
-    if (numberError) return alert(`❌ ผิดกฎหมายเลขรถ:\n${numberError}`);
+    if (numberError) return alert(`❌ Invalid Racing Number:\n${numberError}`);
 
     setLoading(true);
     try {
@@ -168,11 +171,11 @@ function RegistrationForm() {
       });
       const result = await response.json();
       if (response.ok) {
-        alert('✅ ลงทะเบียนสำเร็จ! ข้อมูลถูกบันทึกลงระบบแล้ว');
+        alert('✅ Registration successful!');
         router.push('/vip');
-      } else alert(`❌ เกิดข้อผิดพลาด: ${result.error}`);
+      } else alert(`❌ Error: ${result.error}`);
     } catch (error) {
-      alert('❌ ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
+      alert('❌ Cannot connect to the server.');
     } finally {
       setLoading(false);
     }
@@ -187,14 +190,19 @@ function RegistrationForm() {
       {/* --- โซน My Garage --- */}
       <div className="bg-black p-6 rounded-xl border border-gray-800 shadow-lg relative overflow-hidden">
         <div className="absolute top-0 left-0 w-1 h-full bg-[#cba052]"></div>
-        <h3 className="text-lg font-bold mb-4 text-[#cba052] uppercase tracking-tight"><i className="fas fa-users-cog mr-2"></i>My Garage (เลือกนักแข่ง)</h3>
+        <h3 className="text-lg font-bold mb-4 text-[#cba052] uppercase tracking-tight"><i className="fas fa-users-cog mr-2"></i>My Garage (Select Driver)</h3>
         {fetchingDrivers ? (
           <div className="text-gray-500 text-sm"><i className="fas fa-spinner fa-spin mr-2"></i> Loading Garage...</div>
         ) : (
           <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={handleNewDriver} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 transition ${!formData.driverId ? 'border-[#E43138] bg-[#E43138]/20 text-white' : 'border-gray-800 text-gray-400 hover:border-gray-600'}`}>
-              <i className="fas fa-plus mr-2"></i> NEW DRIVER
-            </button>
+            
+            {/* 🚩 ซ่อนปุ่มถ้าเป็นแค่ USER และมีนักแข่งในทีมแล้ว */}
+            {((session?.user as any)?.role === 'VIP' || (session?.user as any)?.role === 'ADMIN' || teamDrivers.length === 0) && (
+              <button type="button" onClick={handleNewDriver} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 transition ${!formData.driverId ? 'border-[#E43138] bg-[#E43138]/20 text-white' : 'border-gray-800 text-gray-400 hover:border-gray-600'}`}>
+                <i className="fas fa-plus mr-2"></i> NEW DRIVER
+              </button>
+            )}
+
             {teamDrivers.map((driver, idx) => (
               <button key={idx} type="button" onClick={() => handleSelectExistingDriver(driver)} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 transition ${formData.driverId === driver.rawId ? 'border-[#cba052] bg-[#cba052]/20 text-white' : 'border-gray-800 text-gray-400 hover:border-gray-600 bg-[#111]'}`}>
                 <i className="fas fa-user-astronaut mr-2"></i> {driver.name} {driver.racingNumber !== '-' ? `(#${driver.racingNumber})` : ''}
@@ -224,8 +232,8 @@ function RegistrationForm() {
           <select className="p-3 bg-black border border-gray-800 rounded focus:border-[#cba052] text-white disabled:opacity-50" value={formData.bloodType} onChange={(e) => setFormData({...formData, bloodType: e.target.value})} disabled={!!formData.driverId && !isEditingProfile}>
             <option value="">Blood Type</option><option value="A Rh+">A Rh+</option><option value="B Rh+">B Rh+</option><option value="O Rh+">O Rh+</option><option value="AB Rh+">AB Rh+</option>
           </select>
-          <select className="p-3 bg-black border border-gray-800 rounded focus:border-[#cba052] text-white disabled:opacity-50" value={formData.shirtSize} onChange={(e) => setFormData({...formData, shirtSize: e.target.value})} required={!!formData.driverId && !isEditingProfile}>
-            <option value="">Shirt Size</option><option value="XS">XS</option><option value="S">S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option>
+          <select className="p-3 bg-black border border-gray-800 rounded focus:border-[#cba052] text-white disabled:opacity-50" value={formData.shirtSize} onChange={(e) => setFormData({...formData, shirtSize: e.target.value})} required>
+            <option value="">Shirt Size *</option><option value="XS">XS</option><option value="S">S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option><option value="XXL">XXL</option>
           </select>
           <input type="text" placeholder="Mobile No." className="p-3 bg-black border border-gray-800 rounded focus:border-[#cba052] text-white disabled:opacity-50" value={formData.mobileNo} onChange={(e) => setFormData({...formData, mobileNo: e.target.value})} disabled={!!formData.driverId && !isEditingProfile} />
           <input type="text" placeholder="License No." className="p-3 bg-black border border-gray-800 rounded focus:border-[#cba052] text-white disabled:opacity-50" value={formData.licenseNo} onChange={(e) => setFormData({...formData, licenseNo: e.target.value})} disabled={!!formData.driverId && !isEditingProfile} />
@@ -236,9 +244,9 @@ function RegistrationForm() {
       <div className="bg-[#1a1a1a] p-6 rounded-xl border border-gray-800 shadow-lg">
         <h3 className="text-lg font-bold mb-4 text-[#cba052] uppercase tracking-tight">2. Category & Racing Number</h3>
         {!formData.birthDate ? (
-          <div className="p-4 bg-black text-gray-500 rounded border border-gray-800 text-center font-bold">กรุณาระบุวันเกิดนักแข่งก่อนครับ</div>
+          <div className="p-4 bg-black text-gray-500 rounded border border-gray-800 text-center font-bold">Please enter date of birth first.</div>
         ) : availableClasses.length === 0 ? (
-          <div className="p-4 bg-red-900/20 text-red-500 rounded text-center font-bold">อายุไม่ตรงเกณฑ์การแข่งขัน</div>
+          <div className="p-4 bg-red-900/20 text-red-500 rounded text-center font-bold">Age does not meet category requirements.</div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
             {availableClasses.map((cls) => (
@@ -253,7 +261,7 @@ function RegistrationForm() {
         {(formData.primaryClass === 'Micro MAX' || formData.primaryClass === 'Mini MAX' || formData.primaryClass === 'Senior MAX Masters') && (
           <div className="bg-yellow-900/20 border border-yellow-700/50 p-4 rounded-lg flex items-center mb-6">
             <input type="checkbox" className="w-5 h-5 accent-[#E43138] rounded mr-3" checked={formData.crossEntry} onChange={(e) => setFormData({...formData, crossEntry: e.target.checked})} />
-            <span className="font-bold text-white">Cross Entry ลงแข่งควบ ({formData.primaryClass.includes('Micro') ? 'Micro Rookie' : formData.primaryClass.includes('Mini') ? 'Mini Rookie' : 'Senior MAX'})</span>
+            <span className="font-bold text-white">Cross Entry ({formData.primaryClass.includes('Micro') ? 'Micro Rookie' : formData.primaryClass.includes('Mini') ? 'Mini Rookie' : 'Senior MAX'})</span>
           </div>
         )}
 
@@ -261,9 +269,9 @@ function RegistrationForm() {
           <div className="mt-4 p-4 border border-[#E43138]/30 bg-[#E43138]/10 rounded-lg inline-block w-full md:w-auto">
              <label className="block text-xs font-bold text-[#E43138] mb-1 uppercase">Assigned Racing Number *</label>
              <div className="flex items-center gap-3">
-               <input type="number" placeholder="เช่น 315" className="w-32 p-3 text-2xl font-black rounded bg-black border border-[#E43138]/50 outline-none focus:border-[#E43138] text-white text-center" value={formData.racingNumber} onChange={(e) => setFormData({...formData, racingNumber: e.target.value})} required />
+               <input type="number" placeholder="e.g. 315" className="w-32 p-3 text-2xl font-black rounded bg-black border border-[#E43138]/50 outline-none focus:border-[#E43138] text-white text-center" value={formData.racingNumber} onChange={(e) => setFormData({...formData, racingNumber: e.target.value})} required />
                <div className="text-xs text-gray-400 font-bold">
-                 (ช่วงเบอร์รถที่อนุญาตสำหรับ {formData.primaryClass}: <br/>
+                 (Allowed number range for {formData.primaryClass}: <br/>
                  <span className="text-white text-sm">
                    {formData.primaryClass === 'Micro MAX' && '1 - 99'}
                    {formData.primaryClass === 'Mini MAX' && '100 - 199'}
@@ -288,17 +296,16 @@ function RegistrationForm() {
           </div>
           {totalFee > 0 && <p className="text-xs text-[#E43138] mt-1">{formatTHB(baseFee)} x {selectedEvents.length} Event(s)</p>}
           
-          {/* 🚨 แจ้งเตือนตรงนี้เลย ถ้าแอบลืมเลือกสนาม! */}
           {selectedEvents.length === 0 && (
             <div className="mt-2 text-[#E43138] font-bold text-xs bg-red-900/20 px-3 py-1 rounded border border-red-700/50 inline-block">
-              <i className="fas fa-exclamation-triangle mr-1"></i> ยอดเป็น 0 เพราะยังไม่ได้เลือกสนามครับ!
+              <i className="fas fa-exclamation-triangle mr-1"></i> Total is 0 because no events are selected!
             </div>
           )}
         </div>
         
         <button 
           type="submit" 
-          disabled={loading} // 🚩 ปลดล็อกให้กดได้แล้ว! จะได้เด้ง Alert บอกบอสได้
+          disabled={loading}
           className="w-full md:w-auto px-10 py-4 font-black tracking-widest text-white bg-[#E43138] rounded-lg hover:bg-red-700 transition disabled:opacity-50 shadow-[0_0_20px_rgba(228,49,56,0.3)]"
         >
           {loading ? 'SAVING...' : 'CONFIRM REGISTRATION'}
@@ -313,7 +320,6 @@ export default function ParticipantPage() {
     <div className="bg-[#111111] min-h-screen pb-20 text-white">
       <div className="max-w-4xl mx-auto px-4 mt-8 md:mt-12">
         
-        {/* 🔙 🚩 ปุ่ม Back to Garage อยู่ตรงนี้ครับบอส! */}
         <div className="mb-6">
           <Link href="/vip" className="text-[#E43138] hover:text-white text-sm font-bold transition inline-flex items-center">
             <i className="fas fa-arrow-left mr-2"></i> BACK TO GARAGE

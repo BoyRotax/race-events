@@ -66,7 +66,7 @@ export default function VipDashboard() {
     <div className="min-h-screen bg-[#111111] text-white p-4 md:p-8 font-sans pb-20">
       <div className="max-w-7xl mx-auto mt-4">
         
-        {/* 🏁 Header */}
+       {/* 🏁 Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-gray-800 pb-6">
           <div>
             <div className="text-[#cba052] font-black text-xs tracking-widest uppercase mb-1">Team Management Portal</div>
@@ -74,9 +74,13 @@ export default function VipDashboard() {
               {session?.user?.name} <span className="text-gray-600">GARAGE</span>
             </h1>
           </div>
-          <Link href="/add-driver" className="mt-4 md:mt-0 bg-[#E43138] hover:bg-red-700 text-white px-6 py-3 rounded-lg font-black tracking-widest transition shadow-[0_0_15px_rgba(228,49,56,0.3)] flex items-center">
-            <i className="fas fa-plus-circle mr-2"></i> REGISTER NEW DRIVER
-          </Link>
+          
+          {/* 🚩 ซ่อนปุ่มถ้าเป็นแค่ USER และมีนักแข่งแล้ว 1 คน */}
+          {((session?.user as any)?.role === 'VIP' || (session?.user as any)?.role === 'ADMIN' || drivers.length === 0) && (
+            <Link href="/add-driver" className="mt-4 md:mt-0 bg-[#E43138] hover:bg-red-700 text-white px-6 py-3 rounded-lg font-black tracking-widest transition shadow-[0_0_15px_rgba(228,49,56,0.3)] flex items-center">
+              <i className="fas fa-plus-circle mr-2"></i> REGISTER NEW DRIVER
+            </Link>
+          )}
         </div>
 
         {/* 🚨 Pending Payment Alert */}
