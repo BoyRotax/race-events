@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
 const ENTRY_FEES: Record<string, number> = {
   'Micro MAX': 21000,
